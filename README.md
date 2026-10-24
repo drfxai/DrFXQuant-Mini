@@ -4,8 +4,8 @@
 
 ## Implemented
 - Telegram Serverless command handler: `/start`, `/help`, `/price BTCUSDT`, `/signals`
-- Authenticated Mini App endpoints: profile, live spot quote, public signals, per-user watchlist, language selection, capabilities
-- Mobile-first Persian/English RTL/LTR dark dashboard, responsive and keyboard-safe
+- Authenticated Mini App endpoints: profile, live spot quote, public signals, per-user watchlist, six-language selection and persisted preference, capabilities
+- Mobile-first six-language dark dashboard (English default; Persian, Arabic, Turkish, Russian, Hindi; RTL for Persian/Arabic), responsive and keyboard-safe
 - Real spot quotes (Binance REST) with error/staleness transparency: **never generate synthetic market values**
 - Optional Cloudflare Workers TradingView webhook receiver with D1 persistence, replay suppression, Telegram channel relay, scheduled retries
 - No VPS, PM2, Express, Socket.IO, mediasoup, coturn, or self-hosted Postgres needed for the foundation
@@ -86,3 +86,6 @@ npm run deploy
 ```
 
 The AI model must be verified as actually available for the supplied API key. No live model is claimed before these steps. Mini App calls cross-origin Worker with allowed exact `Origin` and verified `initData`; never rely on `initDataUnsafe` for security. Bot text AI replies remain disabled in v0.1.0; this AI module is Mini App only.
+
+## Internationalization
+UI + dynamic status messages are fully catalogued for **English (en, default), Persian (fa), Arabic (ar), Turkish (tr), Russian (ru), and Hindi (hi)**. RTL is enabled only for `fa` and `ar`; watchlist symbols, prices, and identifiers are kept legible in LTR. Users select their language using the header dropdown; the preference is saved through `saveSettings` and loaded by `getProfile` from Telegram SQLite. New users default to English regardless of Telegram device language. Bot commands include `/language en|fa|ar|tr|ru|hi` and use the same persisted per-user preference. All language catalogs have parity tests in CI (`node --test tests/*.test.mjs`).

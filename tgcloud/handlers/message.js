@@ -1,34 +1,57 @@
-import { api } from 'sdk';
+import { api, db } from 'sdk';
+import { eq } from 'sdk/db';
+import { settings } from '../schema.js';
 import { livePrice, normalizeSymbol } from '../lib/market.js';
 import { publicSignals } from '../lib/signals.js';
+import { BOT_LANGUAGES, botLocale, botText } from '../lib/bot-i18n.js';
 
-const HELP = 'DrFXQuant Mini\n\n/start — welcome\n/help — commands\n/price BTCUSDT — live spot observation\n/signals — latest published alerts\n\nOpen the Mini App from the bot menu once configured. AI chat, trading and payments are not enabled in this foundation release.';
-function fmtPrice(n){ return n.toLocaleString('en-US',{maximumFractionDigits:8}); }
+function fmtPrice(n){return n.toLocaleString('en-US',{maximumFractionDigits:8});}
+async function getLanguage(userId){
+ if(!userId)return 'en';
+ try{
+  const saved=await db.select().from(settings).where(eq(settings.userId,userId)).get();
+  return botLocale(saved?.language);
+ }catch(_){return 'en';}
+}
+async function send(chatId,text){await api.sendMessage({chat_id:chatId,text});}
 
-export default async function(message) {
-  if (!message?.chat?.id || typeof message.text !== 'string') return;
-  const chatId = message.chat.id;
-  // Avoid replying in unrelated group conversations.
-  if (message.chat.type !== 'private' && !message.text.startsWith('/')) return;
-  const cmd = message.text.trim().split(/\s+/);
-  const op = (cmd[0]||'').split('@')[0].toLowerCase();
-  if (op === '/start' || op === '/help') {
-    await api.sendMessage({chat_id:chatId,text:HELP}); return;
-  }
-  if (op === '/price') {
-    const symbol = normalizeSymbol(cmd[1]);
-    if (!symbol) { await api.sendMessage({chat_id:chatId,text:'Use /price BTCUSDT (also ETHUSDT, SOLUSDT, BNBUSDT).'}); return; }
-    const p = await livePrice(symbol);
-    const text = p.error ? 'Market data unavailable. No price will be estimated.' : symbol + ' · ' + fmtPrice(p.price) + ' USDT\nSource: '+p.source+'\nObservation: '+new Date(p.observedAt).toISOString()+'\nIndicative spot quote, not an execution price.';
-    await api.sendMessage({chat_id:chatId,text}); return;
-  }
-  if (op === '/signals') {
-    const data = await publicSignals(5);
-    if (!data.configured) { await api.sendMessage({chat_id:chatId,text:'Signals gateway is not configured yet.'}); return; }
-    if (data.unavailable) { await api.sendMessage({chat_id:chatId,text:'Signal service temporarily unavailable.'}); return; }
-    if (!data.signals.length) { await api.sendMessage({chat_id:chatId,text:'No verified signals available yet.'}); return; }
-    const lines = data.signals.map(s=>s.symbol+' · '+String(s.side||'').toUpperCase()+' · '+s.timeframe+'\n'+s.created_at).join('\n\n');
-    await api.sendMessage({chat_id:chatId,text:'Latest alerts (not trading advice):\n\n'+lines.slice(0,3500)});return;
-  }
-  if (message.chat.type === 'private') await api.sendMessage({chat_id:chatId,text:'Use /help to see available commands.'});
+export default async function(message){
+ if(!message?.chat?.id || typeof message.text!=='string')return;
+ const chatId=message.chat.id;
+ if(message.chat.type!=='private' && !message.text.startsWith('/'))return;
+ const userId=message.from?.id;
+ const tokens=message.text.trim().split(/\s+/);
+ const op=(tokens[0]||'').split('@')[0].toLowerCase();
+ let language=await getLanguage(userId);
+ const t=key=>botText(language,key);
+ if(op==='/language'){
+  const requested=String(tokens[1]||'').trim().toLowerCase();
+  if(!BOT_LANGUAGES.includes(requested)){await send(chatId,t('languageUsage'));return;}
+  if(!userId){await send(chatId,t('languageError'));return;}
+  try{
+   await db.insert(settings).values({userId,language:requested})
+      .onConflictDoUpdate({target:settings.userId,set:{language:requested}}).run();
+   language=requested;
+   await send(chatId,t('languageSaved'));
+  }catch(_){await send(chatId,t('languageError'));}
+  return;
+ }
+ if(op==='/start'||op==='/help'){await send(chatId,t('help'));return;}
+ if(op==='/price'){
+  const symbol=normalizeSymbol(tokens[1]);
+  if(!symbol){await send(chatId,t('priceUsage'));return;}
+  const data=await livePrice(symbol);
+  if(data.error){await send(chatId,t('noFeed'));return;}
+  const text=symbol+' · '+fmtPrice(data.price)+' USDT\n'+t('source')+': '+data.source+'\n'+t('observation')+': '+new Date(data.observedAt).toISOString()+'\n'+t('indicative');
+  await send(chatId,text);return;
+ }
+ if(op==='/signals'){
+  const result=await publicSignals(5);
+  if(!result.configured){await send(chatId,t('signalOff'));return;}
+  if(result.unavailable){await send(chatId,t('signalsUnavailable'));return;}
+  if(!result.signals.length){await send(chatId,t('noSignals'));return;}
+  const lines=result.signals.map(s=>s.symbol+' · '+String(s.side||'').toUpperCase()+' · '+s.timeframe+'\n'+s.created_at).join('\n\n');
+  await send(chatId,t('signalTitle')+'\n\n'+lines.slice(0,3500));return;
+ }
+ if(message.chat.type==='private')await send(chatId,t('helpShort'));
 }

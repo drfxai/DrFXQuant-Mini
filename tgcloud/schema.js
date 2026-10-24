@@ -9,5 +9,5 @@ export const watchlists = table('watchlists', {
 
 export const settings = table('user_settings', {
   userId: integer('user_id').primaryKey(),
-  language: text('language').notNull().default('fa'),
+  language: text('language').notNull().default('en'),
 });

@@ -163,13 +163,13 @@ $('language-select').addEventListener('change',async event=>{
  const requested=localeOrDefault(event.target.value);
  const requestNumber=++languageRequest;
  changeLocale(requested);
- setMessage('watch-state','');
+ setMessage('language-status','');
  if(!profile)return;
  try{
   await api('saveSettings',{language:requested});
-  if(requestNumber===languageRequest)setMessage('watch-state','languageSaved');
+  if(requestNumber===languageRequest)setMessage('language-status','languageSaved');
  }catch(_){
-  if(requestNumber===languageRequest)setMessage('watch-state','updateFailed');
+  if(requestNumber===languageRequest)setMessage('language-status','updateFailed');
  }
 });
 

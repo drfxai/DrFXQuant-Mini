@@ -1,0 +1,102 @@
+// Localized Telegram bot replies, no external localization service.
+export const BOT_LANGUAGES = ["en","fa","ar","tr","ru","hi"];
+const dictionary = {
+  "en": {
+    "help": "DrFXQuant Mini\\n\\n/start — welcome\\n/help — commands\\n/price BTCUSDT — actual spot price\\n/signals — latest published alerts\\n/language en — change language (en/fa/ar/tr/ru/hi)\\n\\nOpen the Mini App from the bot menu once configured. Automated trading and payments are disabled.",
+    "priceUsage": "Use /price BTCUSDT (also ETHUSDT, SOLUSDT, BNBUSDT).",
+    "noFeed": "Market data unavailable. No price will be estimated.",
+    "source": "Source",
+    "observation": "Observed",
+    "indicative": "Indicative spot quote, not an execution price.",
+    "signalOff": "Signals gateway is not configured yet.",
+    "signalsUnavailable": "Signal service temporarily unavailable.",
+    "noSignals": "No verified signals available yet.",
+    "signalTitle": "Latest alerts (not trading advice):",
+    "helpShort": "Use /help to see available commands.",
+    "languageUsage": "Choose: /language en, fa, ar, tr, ru or hi.",
+    "languageSaved": "Language updated to English.",
+    "languageError": "Could not save language preference."
+  },
+  "fa": {
+    "help": "DrFXQuant Mini\\n\\n/start — شروع\\n/help — راهنما\\n/price BTCUSDT — قیمت واقعی بازار\\n/signals — آخرین هشدارها\\n/language fa — تغییر زبان (en/fa/ar/tr/ru/hi)\\n\\nمینی‌اپ را از منوی ربات باز کنید. معاملات خودکار و پرداخت غیرفعال‌اند.",
+    "priceUsage": "نمونه: /price BTCUSDT (همچنین ETHUSDT، SOLUSDT و BNBUSDT).",
+    "noFeed": "داده بازار در دسترس نیست؛ قیمت تخمینی ارائه نمی‌شود.",
+    "source": "منبع",
+    "observation": "زمان دریافت",
+    "indicative": "قیمت تقریبی بازار نقدی است، نه قیمت اجرای سفارش.",
+    "signalOff": "درگاه سیگنال هنوز تنظیم نشده است.",
+    "signalsUnavailable": "سرویس سیگنال موقتاً در دسترس نیست.",
+    "noSignals": "هنوز سیگنال تأییدشده‌ای وجود ندارد.",
+    "signalTitle": "آخرین هشدارها (نه توصیه معامله):",
+    "helpShort": "برای دیدن دستورات /help را بزنید.",
+    "languageUsage": "زبان را انتخاب کنید: /language en، fa، ar، tr، ru یا hi.",
+    "languageSaved": "زبان فارسی ذخیره شد.",
+    "languageError": "امکان ذخیره زبان وجود ندارد."
+  },
+  "ar": {
+    "help": "DrFXQuant Mini\\n\\n/start — البدء\\n/help — المساعدة\\n/price BTCUSDT — السعر الفعلي\\n/signals — أحدث التنبيهات\\n/language ar — تغيير اللغة (en/fa/ar/tr/ru/hi)\\n\\nافتح التطبيق المصغر من قائمة البوت. التداول الآلي والمدفوعات معطّلة.",
+    "priceUsage": "استخدم /price BTCUSDT (أو ETHUSDT وSOLUSDT وBNBUSDT).",
+    "noFeed": "بيانات السوق غير متاحة؛ لن نعرض سعراً تقديرياً.",
+    "source": "المصدر",
+    "observation": "وقت الرصد",
+    "indicative": "سعر استرشادي للسوق الفورية وليس سعر تنفيذ.",
+    "signalOff": "لم تُعَدّ بوابة الإشارات بعد.",
+    "signalsUnavailable": "خدمة الإشارات غير متاحة مؤقتاً.",
+    "noSignals": "لا توجد إشارات مؤكدة بعد.",
+    "signalTitle": "أحدث التنبيهات (ليست نصيحة تداول):",
+    "helpShort": "استخدم /help لمعرفة الأوامر.",
+    "languageUsage": "اختر اللغة: /language en أو fa أو ar أو tr أو ru أو hi.",
+    "languageSaved": "تم حفظ العربية.",
+    "languageError": "تعذّر حفظ اللغة."
+  },
+  "tr": {
+    "help": "DrFXQuant Mini\\n\\n/start — başla\\n/help — komutlar\\n/price BTCUSDT — gerçek spot fiyatı\\n/signals — son uyarılar\\n/language tr — dil seç (en/fa/ar/tr/ru/hi)\\n\\nMini App'i bot menüsünden açın. Otomatik işlem ve ödeme kapalıdır.",
+    "priceUsage": "/price BTCUSDT kullanın (ayrıca ETHUSDT, SOLUSDT, BNBUSDT).",
+    "noFeed": "Piyasa verisi alınamıyor. Tahmini fiyat gösterilmez.",
+    "source": "Kaynak",
+    "observation": "Gözlem",
+    "indicative": "Gösterge niteliğinde spot fiyat; işlem fiyatı değil.",
+    "signalOff": "Sinyal ağ geçidi henüz yapılandırılmadı.",
+    "signalsUnavailable": "Sinyal hizmeti geçici olarak kullanılamıyor.",
+    "noSignals": "Henüz doğrulanmış sinyal yok.",
+    "signalTitle": "Son uyarılar (yatırım tavsiyesi değil):",
+    "helpShort": "Komutlar için /help yazın.",
+    "languageUsage": "Dil seçin: /language en, fa, ar, tr, ru veya hi.",
+    "languageSaved": "Dil Türkçe olarak kaydedildi.",
+    "languageError": "Dil tercihi kaydedilemedi."
+  },
+  "ru": {
+    "help": "DrFXQuant Mini\\n\\n/start — запуск\\n/help — команды\\n/price BTCUSDT — реальная цена\\n/signals — последние сигналы\\n/language ru — выбрать язык (en/fa/ar/tr/ru/hi)\\n\\nОткройте Mini App из меню бота. Автоторговля и платежи отключены.",
+    "priceUsage": "Используйте /price BTCUSDT (также ETHUSDT, SOLUSDT, BNBUSDT).",
+    "noFeed": "Котировки недоступны. Приблизительные цены не показываются.",
+    "source": "Источник",
+    "observation": "Время котировки",
+    "indicative": "Ориентировочная спотовая цена, не цена исполнения.",
+    "signalOff": "Шлюз сигналов ещё не настроен.",
+    "signalsUnavailable": "Сервис сигналов временно недоступен.",
+    "noSignals": "Подтверждённых сигналов пока нет.",
+    "signalTitle": "Последние оповещения (не торговая рекомендация):",
+    "helpShort": "Введите /help для списка команд.",
+    "languageUsage": "Выберите язык: /language en, fa, ar, tr, ru или hi.",
+    "languageSaved": "Русский язык сохранён.",
+    "languageError": "Не удалось сохранить язык."
+  },
+  "hi": {
+    "help": "DrFXQuant Mini\\n\\n/start — शुरू करें\\n/help — कमांड\\n/price BTCUSDT — वास्तविक स्पॉट भाव\\n/signals — नए अलर्ट\\n/language hi — भाषा बदलें (en/fa/ar/tr/ru/hi)\\n\\nMini App को बॉट मेनू से खोलें। ऑटो ट्रेडिंग और भुगतान बंद हैं।",
+    "priceUsage": "/price BTCUSDT लिखें (ETHUSDT, SOLUSDT, BNBUSDT भी)।",
+    "noFeed": "बाज़ार डेटा उपलब्ध नहीं है। अनुमानित कीमत नहीं दिखाई जाएगी।",
+    "source": "स्रोत",
+    "observation": "रिकॉर्ड समय",
+    "indicative": "संदर्भ के लिए स्पॉट भाव; ऑर्डर का निष्पादन भाव नहीं।",
+    "signalOff": "सिग्नल गेटवे अभी सेट नहीं है।",
+    "signalsUnavailable": "सिग्नल सेवा अस्थायी रूप से उपलब्ध नहीं है।",
+    "noSignals": "अभी कोई सत्यापित सिग्नल नहीं है।",
+    "signalTitle": "नए अलर्ट (ट्रेडिंग सलाह नहीं):",
+    "helpShort": "उपलब्ध कमांड के लिए /help लिखें।",
+    "languageUsage": "भाषा चुनें: /language en, fa, ar, tr, ru या hi।",
+    "languageSaved": "हिन्दी भाषा सेव हो गई।",
+    "languageError": "भाषा सेटिंग सेव नहीं हो सकी।"
+  }
+};
+export function botLocale(lang){return BOT_LANGUAGES.includes(lang)?lang:'en';}
+export function botText(lang,key){return dictionary[botLocale(lang)][key] ?? dictionary.en[key] ?? key;}

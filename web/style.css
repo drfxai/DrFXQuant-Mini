@@ -15,3 +15,6 @@ html[dir="rtl"] .hero-kpi{direction:rtl}
 html[dir="ltr"] .hero-kpi{direction:ltr}
 @media(max-width:520px){.topbar .status-chip{display:none}.topbar{gap:8px}.brand-name{font-size:17px}.language-select{max-width:92px}.tabs{justify-content:start;gap:3px}.tab{flex:0 0 auto;min-width:77px}.section-head h2{font-size:16px}}
 @media(min-width:650px){.tab{flex:1 1 0}}
+
+.lang-message{display:none;color:#ffcc62;margin-top:-18px;margin-bottom:14px}
+.lang-message:not(:empty){display:block}
