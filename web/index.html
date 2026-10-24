@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="DrFXQuant Mini · Telegram trading dashboard">
+<meta name="referrer" content="no-referrer">
+<title>DrFXQuant Mini</title>
+<script src="https://telegram.org/js/telegram-web-app.js?64"></script>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="ambient"></div>
+<div id="app" class="app">
+<header class="topbar"><div class="brand-icon">D<span>Q</span></div><div class="brand-name">DrFX<span>Quant</span><small>MINI · SERVERLESS</small></div><div class="top-actions"><button id="lang" class="mini-button" type="button" aria-label="Change language">EN</button><div id="connection" class="status-chip" aria-live="polite">● <span data-i18n="connecting">اتصال...</span></div></div></header>
+<section class="hero">
+<div class="eyebrow"><span class="pulse-dot"></span> <span data-i18n="market">MARKET CONTROL CENTER</span></div>
+<h1 data-i18n="headline">بازار را هوشمندتر دنبال کنید.</h1>
+<p data-i18n="lead">پنل اختصاصی تحلیل، قیمت واقعی و هشدارهای معاملاتی؛ در داخل تلگرام.</p>
+<div class="hero-kpi"><span data-i18n="mode">حالت اجرا</span><strong>TELEGRAM SERVERLESS</strong></div>
+</section>
+<nav class="tabs" aria-label="Sections">
+<button data-tab="market" class="tab active" data-i18n="tabMarket">بازار</button>
+<button data-tab="signals" class="tab" data-i18n="tabSignals">سیگنال‌ها</button>
+<button data-tab="watchlist" class="tab" data-i18n="tabWatch">واچ‌لیست</button>
+<button data-tab="account" class="tab" data-i18n="tabAccount">حساب</button>
+</nav>
+<main>
+<section data-panel="market" class="panel visible">
+<div class="section-head"><div><span class="overline">SPOT · USDT</span><h2 data-i18n="liveQuotes">قیمت‌های واقعی بازار</h2></div><button id="refresh" class="outline-button" type="button" data-i18n="refresh">بروزرسانی</button></div>
+<p id="market-note" class="small-note" aria-live="polite"></p>
+<div class="quote-grid" id="quotes"></div>
+<div class="card chart-card">
+<div class="section-head"><div><span class="overline">CHART STUDIO</span><h2 data-i18n="chart">نمودار پیشرفته</h2></div><span class="pill">TradingView</span></div>
+<p class="small-note" data-i18n="chartDesc">برای بررسی چارت کامل و ابزارهای تکنیکال، نماد موردنظر را باز کنید.</p>
+<div class="symbol-links" id="chart-links"></div>
+</div>
+</section>
+<section data-panel="signals" class="panel"><div class="section-head"><div><span class="overline">SIGNAL ENGINE</span><h2 data-i18n="alerts">هشدارهای TradingView</h2></div><button id="refresh-signals" class="outline-button" type="button" data-i18n="refresh">بروزرسانی</button></div><div class="card"><p id="signal-state" class="small-note" aria-live="polite"></p><div id="signal-list" class="signal-list"></div></div></section>
+<section data-panel="watchlist" class="panel"><div class="section-head"><div><span class="overline">YOUR MARKETS</span><h2 data-i18n="favorites">نمادهای منتخب</h2></div></div><div class="card"><p class="small-note" data-i18n="watchHelp">نمادهای موردنظر را انتخاب و ذخیره کنید.</p><div id="watch-options" class="watch-options"></div><button id="save-watch" class="primary-button" type="button" data-i18n="save">ذخیره واچ‌لیست</button><p class="small-note" id="watch-state" aria-live="polite"></p></div></section>
+<section data-panel="account" class="panel"><div class="section-head"><div><span class="overline">IDENTITY & ACCESS</span><h2 data-i18n="account">حساب تلگرام</h2></div></div><div class="card"><div class="profile-badge"><div id="avatar">D</div><div><strong id="display-name">—</strong><p id="username" class="small-note">—</p></div></div><div class="key-value"><span data-i18n="userId">شناسه کاربر</span><code id="user-id">—</code></div><div class="key-value"><span data-i18n="appVersion">نسخه</span><code>0.1.0</code></div><div class="key-value"><span data-i18n="execution">اجرای سرورلس</span><code>Telegram</code></div></div><div class="card muted-card"><h3 data-i18n="disabled">بخش‌های غیرفعال در نسخه اولیه</h3><p data-i18n="disabledDesc">پخش زنده، معامله خودکار، MT5، پرداخت و AI تا تکمیل اتصال امن فعال نیستند.</p></div></section>
+</main>
+<footer><span>© DrFXQuant Mini</span><span data-i18n="disclaimer">اطلاعات آموزشی؛ توصیه مالی نیست.</span></footer>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
