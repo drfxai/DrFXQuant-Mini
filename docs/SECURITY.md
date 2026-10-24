@@ -1,0 +1,11 @@
+# Security baseline
+- Public repository: do not upload original ZIP, private certs, environment files or secret credentials.
+- `tgcloud` has NO third-party npm packages in runtime. No Node.js `process.env` or local filesystem.
+- Mini App endpoints require authenticated `ctx.initData.user`. Server-issued context is trusted, browser UI is not.
+- Cloudflare webhook is authenticated by a deployment-scoped shared secret in request JSON, compared via SHA-256 equality; cap payload to 32 KB.
+- D1 stores allowlisted, normalized public signal data; shared secrets are never persisted.
+- Ensure BotFather CLI credentials in `.tgcloud/` and Cloudflare secrets outside git.
+- Keep all financial trading, MT5 bridges, wallets, KYC, payouts, and real-money operations OFF until separately audited.
+- Cloudflare D1 Signal Gateway is *public read* by design. Do not send sensitive strategy notes or client data to it.
+- Telegram relay is at-least-once, so duplicated outbound message is possible after an uncertain delivery/DB failure.
+- Production follow-ups: stronger per-source abuse controls, ingress IP hardening when feasible, observability/alerts, remote E2E checks and independent pen test.

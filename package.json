@@ -1,0 +1,15 @@
+{
+  "name": "drfxquant-mini",
+  "private": true,
+  "version": "0.1.0",
+  "description": "DrFXQuant Telegram Serverless Mini App",
+  "type": "module",
+  "scripts": {
+    "check": "node tests/static-check.mjs",
+    "deploy": "tgcloud push",
+    "status": "tgcloud status"
+  },
+  "devDependencies": {
+    "@tgcloud/cli": "^0.2.0"
+  }
+}
