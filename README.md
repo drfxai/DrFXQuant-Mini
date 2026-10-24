@@ -73,3 +73,16 @@ The tests are offline. Live Telegram deployment/authorization, Binance access, T
 - This repo is currently public. Only audited and allowlisted files were imported.
 
 Sources: [Telegram Serverless](https://core.telegram.org/bots/serverless), [Telegram Mini Apps](https://core.telegram.org/bots/webapps), [Cloudflare D1](https://developers.cloudflare.com/d1/).
+
+## Optional AI Assistant (Cloudflare Worker, disabled by default)
+Set the **same public** Cloudflare Worker URL (no API keys) in `web/config.js` and in `tgcloud/lib/config.js`. Set Worker `ALLOWED_ORIGIN` to the actual hosted Mini App origin, e.g. `https://app<app_id>.tgcloud.ai` (no trailing slash). The `/api/ai` endpoint verifies Telegram Mini App `initData` with the Telegram Bot API token stored only as a Worker secret, enforces max 15-minute freshness, 20 AI requests per Telegram user per UTC day, and never stores prompt text. Configure additional Worker secrets:
+
+```bash
+cd cloudflare
+npx wrangler secret put OPENROUTER_API_KEY
+npx wrangler secret put OPENROUTER_MODEL
+npx wrangler d1 migrations apply drfxquant-mini-signals --remote
+npm run deploy
+```
+
+The AI model must be verified as actually available for the supplied API key. No live model is claimed before these steps. Mini App calls cross-origin Worker with allowed exact `Origin` and verified `initData`; never rely on `initDataUnsafe` for security. Bot text AI replies remain disabled in v0.1.0; this AI module is Mini App only.

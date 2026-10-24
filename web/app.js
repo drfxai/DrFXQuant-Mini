@@ -1,11 +1,12 @@
+import { GATEWAY_URL } from './config.js';
 // DrFXQuant Mini — no demo market prices, no client-side credentials.
 const tg=window.Telegram?.WebApp;
 tg?.ready?.(); tg?.expand?.();
 const $=id=>document.getElementById(id);
 const symbols=['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'];
 const messages={
- fa:{connecting:'اتصال...',market:'MARKET CONTROL CENTER',headline:'بازار را هوشمندتر دنبال کنید.',lead:'پنل اختصاصی تحلیل، قیمت واقعی و هشدارهای معاملاتی؛ در داخل تلگرام.',mode:'حالت اجرا',tabMarket:'بازار',tabSignals:'سیگنال‌ها',tabWatch:'واچ‌لیست',tabAccount:'حساب',liveQuotes:'قیمت‌های واقعی بازار',refresh:'بروزرسانی',chart:'نمودار پیشرفته',chartDesc:'برای بررسی چارت کامل و ابزارهای تکنیکال، نماد موردنظر را باز کنید.',alerts:'هشدارهای TradingView',favorites:'نمادهای منتخب',watchHelp:'نمادهای موردنظر را انتخاب و ذخیره کنید.',save:'ذخیره واچ‌لیست',account:'حساب تلگرام',userId:'شناسه کاربر',appVersion:'نسخه',execution:'اجرای سرورلس',disabled:'بخش‌های غیرفعال در نسخه اولیه',disabledDesc:'پخش زنده، معامله خودکار، MT5، پرداخت و AI تا تکمیل اتصال امن فعال نیستند.',disclaimer:'اطلاعات آموزشی؛ توصیه مالی نیست.',connected:'متصل',unavailable:'ناموجود',wait:'درحال دریافت قیمت واقعی...',noFeed:'داده زنده در دسترس نیست؛ قیمت تخمینی نمایش داده نمی‌شود.',noSignals:'سیگنال تاییدشده‌ای ثبت نشده است.',signalOff:'Gateway سیگنال هنوز تنظیم نشده است.',saved:'واچ‌لیست ذخیره شد.',notAuthorized:'این پنل را از داخل تلگرام و ربات مرتبط باز کنید.',fetchError:'ارتباط با سرویس برقرار نشد.'},
- en:{connecting:'Connecting...',market:'MARKET CONTROL CENTER',headline:'Trade with a clearer view.',lead:'A focused dashboard for real prices, analysis and verified signal alerts — inside Telegram.',mode:'Runtime',tabMarket:'Markets',tabSignals:'Signals',tabWatch:'Watchlist',tabAccount:'Account',liveQuotes:'Observed market prices',refresh:'Refresh',chart:'Advanced charts',chartDesc:'Open a full TradingView chart for technical analysis and drawings.',alerts:'TradingView alerts',favorites:'My watchlist',watchHelp:'Choose symbols, then save your preferences.',save:'Save watchlist',account:'Telegram account',userId:'User ID',appVersion:'Version',execution:'Serverless runtime',disabled:'Not enabled in this foundation',disabledDesc:'Live streaming, automated trading, MT5, payments and AI remain disabled until secured integrations are completed.',disclaimer:'Educational information; not financial advice.',connected:'Connected',unavailable:'Unavailable',wait:'Fetching actual market observations...',noFeed:'Market feed unavailable. No estimated prices shown.',noSignals:'No verified signals received.',signalOff:'Signals gateway is not configured yet.',saved:'Watchlist saved.',notAuthorized:'Open this panel from its Telegram bot.',fetchError:'Service connection failed.'}
+ fa:{tabAI:'دستیار AI',aiTitle:'دستیار تحلیلی AI',aiHint:'پاسخ‌ها آموزشی‌اند، نه سیگنال قطعی یا توصیه مالی. گفتگو ذخیره نمی‌شود.',aiLabel:'سؤال شما',ask:'پرسیدن از AI',aiOff:'AI هنوز پیکربندی نشده است.',aiBusy:'درحال دریافت پاسخ...',connecting:'اتصال...',market:'MARKET CONTROL CENTER',headline:'بازار را هوشمندتر دنبال کنید.',lead:'پنل اختصاصی تحلیل، قیمت واقعی و هشدارهای معاملاتی؛ در داخل تلگرام.',mode:'حالت اجرا',tabMarket:'بازار',tabSignals:'سیگنال‌ها',tabWatch:'واچ‌لیست',tabAccount:'حساب',liveQuotes:'قیمت‌های واقعی بازار',refresh:'بروزرسانی',chart:'نمودار پیشرفته',chartDesc:'برای بررسی چارت کامل و ابزارهای تکنیکال، نماد موردنظر را باز کنید.',alerts:'هشدارهای TradingView',favorites:'نمادهای منتخب',watchHelp:'نمادهای موردنظر را انتخاب و ذخیره کنید.',save:'ذخیره واچ‌لیست',account:'حساب تلگرام',userId:'شناسه کاربر',appVersion:'نسخه',execution:'اجرای سرورلس',disabled:'بخش‌های غیرفعال در نسخه اولیه',disabledDesc:'پخش زنده، معامله خودکار، MT5، پرداخت و AI تا تکمیل اتصال امن فعال نیستند.',disclaimer:'اطلاعات آموزشی؛ توصیه مالی نیست.',connected:'متصل',unavailable:'ناموجود',wait:'درحال دریافت قیمت واقعی...',noFeed:'داده زنده در دسترس نیست؛ قیمت تخمینی نمایش داده نمی‌شود.',noSignals:'سیگنال تاییدشده‌ای ثبت نشده است.',signalOff:'Gateway سیگنال هنوز تنظیم نشده است.',saved:'واچ‌لیست ذخیره شد.',notAuthorized:'این پنل را از داخل تلگرام و ربات مرتبط باز کنید.',fetchError:'ارتباط با سرویس برقرار نشد.'},
+ en:{tabAI:'AI Assistant',aiTitle:'AI Analysis Assistant',aiHint:'Educational explanations only, not investment advice. This chat is not stored.',aiLabel:'Your question',ask:'Ask AI',aiOff:'AI gateway is not configured.',aiBusy:'Generating a response...',connecting:'Connecting...',market:'MARKET CONTROL CENTER',headline:'Trade with a clearer view.',lead:'A focused dashboard for real prices, analysis and verified signal alerts — inside Telegram.',mode:'Runtime',tabMarket:'Markets',tabSignals:'Signals',tabWatch:'Watchlist',tabAccount:'Account',liveQuotes:'Observed market prices',refresh:'Refresh',chart:'Advanced charts',chartDesc:'Open a full TradingView chart for technical analysis and drawings.',alerts:'TradingView alerts',favorites:'My watchlist',watchHelp:'Choose symbols, then save your preferences.',save:'Save watchlist',account:'Telegram account',userId:'User ID',appVersion:'Version',execution:'Serverless runtime',disabled:'Not enabled in this foundation',disabledDesc:'Live streaming, automated trading, MT5, payments and AI remain disabled until secured integrations are completed.',disclaimer:'Educational information; not financial advice.',connected:'Connected',unavailable:'Unavailable',wait:'Fetching actual market observations...',noFeed:'Market feed unavailable. No estimated prices shown.',noSignals:'No verified signals received.',signalOff:'Signals gateway is not configured yet.',saved:'Watchlist saved.',notAuthorized:'Open this panel from its Telegram bot.',fetchError:'Service connection failed.'}
 };
 let locale='fa';let profile=null;let watch=new Set(['BTCUSDT','ETHUSDT']);
 const tr=k=>messages[locale][k]||k;
@@ -20,6 +21,33 @@ function signalCard(s){const div=document.createElement('article');div.className
 async function loadSignals(){const root=$('signal-list');root.replaceChildren();try{const d=await api('getSignals',{limit:20});$('signal-state').textContent=!d.configured?tr('signalOff'):d.signals.length?'':tr('noSignals');(d.signals||[]).forEach(s=>root.append(signalCard(s)));}catch(_){$('signal-state').textContent=tr('fetchError');}}
 async function loadUser(){try{profile=await api('getProfile');locale=['fa','en'].includes(profile.language)?profile.language:'fa';applyLocale();$('display-name').textContent=profile.firstName||'Telegram user';$('username').textContent=profile.username?'@'+profile.username:'Telegram';$('user-id').textContent=String(profile.id);$('avatar').textContent=(profile.firstName||'D').slice(0,1).toUpperCase();setConnection(true);}catch(_){setConnection(false);$('market-note').textContent=tr('notAuthorized');}try{const saved=await api('getWatchlist');watch=new Set(saved.symbols||[]);watchButtons();}catch(_){}}
 document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(n=>n.classList.toggle('active',n===b));document.querySelectorAll('[data-panel]').forEach(n=>n.classList.toggle('visible',n.dataset.panel===b.dataset.tab));if(b.dataset.tab==='signals')loadSignals();}));
+
+function appendAI(text,role){
+ const bubble=document.createElement('div');
+ bubble.className='ai-bubble '+role;bubble.textContent=text;$('ai-thread').append(bubble);
+ bubble.scrollIntoView({block:'nearest'});return bubble;
+}
+$('ai-form').addEventListener('submit',async(event)=>{
+ event.preventDefault();
+ const message=$('ai-prompt').value.trim();
+ if(!message)return;
+ if(!GATEWAY_URL){$('ai-status').textContent=tr('aiOff');return;}
+ if(!tg?.initData){$('ai-status').textContent=tr('notAuthorized');return;}
+ $('ai-send').disabled=true;$('ai-status').textContent=tr('aiBusy');
+ appendAI(message,'user');$('ai-prompt').value='';
+ try{
+  const res=await fetch(GATEWAY_URL.replace(/\\/$/,'')+'/api/ai',{
+   method:'POST',headers:{'Content-Type':'application/json','x-telegram-init-data':tg.initData},
+   body:JSON.stringify({prompt:message})
+  });
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  if(typeof data.answer!=='string')throw new Error('No answer');
+  appendAI(data.answer,'assistant');$('ai-status').textContent='';
+ }catch(_){$('ai-status').textContent=tr('fetchError');}
+ finally{$('ai-send').disabled=false;}
+});
+
 $('lang').onclick=async()=>{locale=locale==='fa'?'en':'fa';applyLocale();watchButtons();if(profile)try{await api('saveSettings',{language:locale});}catch(_){ } };
 $('refresh').onclick=loadMarket;$('refresh-signals').onclick=loadSignals;
 $('save-watch').onclick=async()=>{const b=$('save-watch');b.disabled=true;try{await api('saveWatchlist',{symbols:[...watch]});$('watch-state').textContent=tr('saved');}catch(_){$('watch-state').textContent=tr('fetchError');}finally{b.disabled=false;}};

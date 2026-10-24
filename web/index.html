@@ -24,6 +24,7 @@
 <button data-tab="market" class="tab active" data-i18n="tabMarket">بازار</button>
 <button data-tab="signals" class="tab" data-i18n="tabSignals">سیگنال‌ها</button>
 <button data-tab="watchlist" class="tab" data-i18n="tabWatch">واچ‌لیست</button>
+<button data-tab="ai" class="tab" data-i18n="tabAI">دستیار AI</button>
 <button data-tab="account" class="tab" data-i18n="tabAccount">حساب</button>
 </nav>
 <main>
@@ -39,6 +40,7 @@
 </section>
 <section data-panel="signals" class="panel"><div class="section-head"><div><span class="overline">SIGNAL ENGINE</span><h2 data-i18n="alerts">هشدارهای TradingView</h2></div><button id="refresh-signals" class="outline-button" type="button" data-i18n="refresh">بروزرسانی</button></div><div class="card"><p id="signal-state" class="small-note" aria-live="polite"></p><div id="signal-list" class="signal-list"></div></div></section>
 <section data-panel="watchlist" class="panel"><div class="section-head"><div><span class="overline">YOUR MARKETS</span><h2 data-i18n="favorites">نمادهای منتخب</h2></div></div><div class="card"><p class="small-note" data-i18n="watchHelp">نمادهای موردنظر را انتخاب و ذخیره کنید.</p><div id="watch-options" class="watch-options"></div><button id="save-watch" class="primary-button" type="button" data-i18n="save">ذخیره واچ‌لیست</button><p class="small-note" id="watch-state" aria-live="polite"></p></div></section>
+<section data-panel="ai" class="panel"><div class="section-head"><div><span class="overline">QUANT AI</span><h2 data-i18n="aiTitle">دستیار تحلیلی AI</h2></div><span class="pill">OpenRouter</span></div><div class="card ai-card"><p class="small-note" data-i18n="aiHint">پاسخ‌ها آموزشی‌اند، نه سیگنال قطعی یا توصیه مالی. گفتگو ذخیره نمی‌شود.</p><div id="ai-thread" class="ai-thread" aria-live="polite"></div><form id="ai-form"><label for="ai-prompt" class="small-note" data-i18n="aiLabel">سؤال شما</label><textarea id="ai-prompt" maxlength="1800" rows="3" required></textarea><button id="ai-send" type="submit" class="primary-button" data-i18n="ask">پرسیدن از AI</button></form><p id="ai-status" class="small-note" aria-live="polite"></p></div></section>
 <section data-panel="account" class="panel"><div class="section-head"><div><span class="overline">IDENTITY & ACCESS</span><h2 data-i18n="account">حساب تلگرام</h2></div></div><div class="card"><div class="profile-badge"><div id="avatar">D</div><div><strong id="display-name">—</strong><p id="username" class="small-note">—</p></div></div><div class="key-value"><span data-i18n="userId">شناسه کاربر</span><code id="user-id">—</code></div><div class="key-value"><span data-i18n="appVersion">نسخه</span><code>0.1.0</code></div><div class="key-value"><span data-i18n="execution">اجرای سرورلس</span><code>Telegram</code></div></div><div class="card muted-card"><h3 data-i18n="disabled">بخش‌های غیرفعال در نسخه اولیه</h3><p data-i18n="disabledDesc">پخش زنده، معامله خودکار، MT5، پرداخت و AI تا تکمیل اتصال امن فعال نیستند.</p></div></section>
 </main>
 <footer><span>© DrFXQuant Mini</span><span data-i18n="disclaimer">اطلاعات آموزشی؛ توصیه مالی نیست.</span></footer>

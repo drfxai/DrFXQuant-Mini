@@ -68,9 +68,64 @@ async function listSignals(request,env){
  const results=await env.SIGNALS_DB.prepare('SELECT symbol,side,timeframe,price,stop_loss,take_profit,strategy,created_at FROM signals ORDER BY created_at DESC LIMIT ?').bind(limit).all();
  return json({signals:results.results||[]});
 }
+
+async function hmacSha256(key,data){
+ const imported=await crypto.subtle.importKey('raw',key,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+ return new Uint8Array(await crypto.subtle.sign('HMAC',imported,te.encode(data)));
+}
+async function verifyMiniApp(initData,token){
+ if(typeof initData!=='string'||initData.length>8192||!token)return null;
+ const form=new URLSearchParams(initData);
+ const provided=form.get('hash'),authTime=Number(form.get('auth_date'));
+ if(!provided||!/^[a-fA-F0-9]{64}$/.test(provided)||!Number.isSafeInteger(authTime))return null;
+ const age=Math.floor(Date.now()/1000)-authTime;
+ if(age< -30||age>900)return null;
+ const check=[...form.entries()].filter(([key])=>key!=='hash').sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([k,value])=>k+'='+value).join('\\n');
+ const secret=await hmacSha256(te.encode('WebAppData'),token);
+ const signed=await hmacSha256(secret,check);
+ const expected=[...signed].map(x=>x.toString(16).padStart(2,'0')).join('');
+ if(!await safeEqual(expected,provided.toLowerCase()))return null;
+ try{const user=JSON.parse(form.get('user')||'null');return user&&Number.isSafeInteger(user.id)&&user.id>0?user:null;}catch(_){return null;}
+}
+function aiCors(origin){return {'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'content-type,x-telegram-init-data','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin'};}
+async function aiReply(request,env){
+ const origin=request.headers.get('origin')||'';
+ if(!env.ALLOWED_ORIGIN||origin!==env.ALLOWED_ORIGIN)return json({error:'origin_forbidden'},403);
+ const cors=aiCors(origin);
+ if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
+ if(request.method!=='POST')return json({error:'method_not_allowed'},405,cors);
+ if(!env.OPENROUTER_API_KEY||!env.OPENROUTER_MODEL||!env.TELEGRAM_BOT_TOKEN||!env.SIGNALS_DB)return json({error:'ai_not_configured'},503,cors);
+ const user=await verifyMiniApp(request.headers.get('x-telegram-init-data'),env.TELEGRAM_BOT_TOKEN);
+ if(!user)return json({error:'unauthorized'},401,cors);
+ let req;try{req=await request.json();}catch(_){return json({error:'invalid_json'},400,cors);}
+ const prompt=typeof req?.prompt==='string'?req.prompt.trim():'';
+ if(!prompt||prompt.length>1800)return json({error:'invalid_prompt'},400,cors);
+ const day=new Date().toISOString().slice(0,10),userId=String(user.id);
+ const quota=await env.SIGNALS_DB.prepare(
+  'INSERT INTO ai_usage (user_id,day,requests) VALUES (?,?,1) ON CONFLICT(user_id,day) DO UPDATE SET requests=requests+1 WHERE requests < 20 RETURNING requests'
+ ).bind(userId,day).first();
+ if(!quota)return json({error:'daily_quota_reached'},429,cors);
+ let upstream;
+ try{
+  upstream=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+   method:'POST',headers:{Authorization:'Bearer '+env.OPENROUTER_API_KEY,'Content-Type':'application/json'},
+   body:JSON.stringify({model:env.OPENROUTER_MODEL,messages:[
+    {role:'system',content:'You are DrFXQuant Mini educational trading assistant. Explain concepts and risk carefully. Do not claim real-time market data, execute trades, promise profits or fabricate live prices. Be concise; reply in the language used by the user.'},
+    {role:'user',content:prompt}
+   ],temperature:0.35,max_tokens:650})
+  });
+  if(!upstream.ok)throw new Error('provider_error');
+  const data=await upstream.json();
+  const answer=data?.choices?.[0]?.message?.content;
+  if(typeof answer!=='string'||!answer.trim())throw new Error('invalid_response');
+  return json({answer:answer.slice(0,6500),model:env.OPENROUTER_MODEL,educational:true},200,cors);
+ }catch(_){return json({error:'ai_provider_unavailable'},502,cors);}
+}
+
 export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
+  if(url.pathname==='/api/ai')return aiReply(request,env);
   if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'DrFXQuant Mini Gateway',version:'0.1.0'});
   if(url.pathname==='/api/webhooks/tradingview'){
     if(request.method!=='POST')return json({error:'method_not_allowed'},405);
