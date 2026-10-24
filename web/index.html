@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -13,37 +13,37 @@
 <body>
 <div class="ambient"></div>
 <div id="app" class="app">
-<header class="topbar"><div class="brand-icon">D<span>Q</span></div><div class="brand-name">DrFX<span>Quant</span><small>MINI · SERVERLESS</small></div><div class="top-actions"><button id="lang" class="mini-button" type="button" aria-label="Change language">EN</button><div id="connection" class="status-chip" aria-live="polite">● <span data-i18n="connecting">اتصال...</span></div></div></header>
+<header class="topbar"><div class="brand-icon">D<span>Q</span></div><div class="brand-name">DrFX<span>Quant</span><small>MINI · SERVERLESS</small></div><div class="top-actions"><label class="language-field"><span class="language-icon" aria-hidden="true">🌐</span><span class="sr-only" data-i18n="language">Language</span><select id="language-select" class="language-select" aria-label="Language" data-i18n-aria="language"><option value="en">English</option><option value="fa">فارسی</option><option value="ar">العربية</option><option value="tr">Türkçe</option><option value="ru">Русский</option><option value="hi">हिन्दी</option></select></label><div id="connection" class="status-chip" aria-live="polite">● <span data-i18n="connecting">Connecting...</span></div></div></header>
 <section class="hero">
 <div class="eyebrow"><span class="pulse-dot"></span> <span data-i18n="market">MARKET CONTROL CENTER</span></div>
-<h1 data-i18n="headline">بازار را هوشمندتر دنبال کنید.</h1>
-<p data-i18n="lead">پنل اختصاصی تحلیل، قیمت واقعی و هشدارهای معاملاتی؛ در داخل تلگرام.</p>
-<div class="hero-kpi"><span data-i18n="mode">حالت اجرا</span><strong>TELEGRAM SERVERLESS</strong></div>
+<h1 data-i18n="headline">Trade with a clearer view.</h1>
+<p data-i18n="lead">A focused dashboard for real prices, analysis and verified signal alerts — inside Telegram.</p>
+<div class="hero-kpi"><span data-i18n="mode">Runtime</span><strong>TELEGRAM SERVERLESS</strong></div>
 </section>
-<nav class="tabs" aria-label="Sections">
-<button data-tab="market" class="tab active" data-i18n="tabMarket">بازار</button>
-<button data-tab="signals" class="tab" data-i18n="tabSignals">سیگنال‌ها</button>
-<button data-tab="watchlist" class="tab" data-i18n="tabWatch">واچ‌لیست</button>
-<button data-tab="ai" class="tab" data-i18n="tabAI">دستیار AI</button>
-<button data-tab="account" class="tab" data-i18n="tabAccount">حساب</button>
+<nav class="tabs" aria-label="Main navigation" data-i18n-aria="tabNav">
+<button data-tab="market" class="tab active" data-i18n="tabMarket">Markets</button>
+<button data-tab="signals" class="tab" data-i18n="tabSignals">Signals</button>
+<button data-tab="watchlist" class="tab" data-i18n="tabWatch">Watchlist</button>
+<button data-tab="ai" class="tab" data-i18n="tabAI">AI Assistant</button>
+<button data-tab="account" class="tab" data-i18n="tabAccount">Account</button>
 </nav>
 <main>
 <section data-panel="market" class="panel visible">
-<div class="section-head"><div><span class="overline">SPOT · USDT</span><h2 data-i18n="liveQuotes">قیمت‌های واقعی بازار</h2></div><button id="refresh" class="outline-button" type="button" data-i18n="refresh">بروزرسانی</button></div>
+<div class="section-head"><div><span class="overline">SPOT · USDT</span><h2 data-i18n="liveQuotes">Observed market prices</h2></div><button id="refresh" class="outline-button" type="button" data-i18n="refresh">Refresh</button></div>
 <p id="market-note" class="small-note" aria-live="polite"></p>
 <div class="quote-grid" id="quotes"></div>
 <div class="card chart-card">
-<div class="section-head"><div><span class="overline">CHART STUDIO</span><h2 data-i18n="chart">نمودار پیشرفته</h2></div><span class="pill">TradingView</span></div>
-<p class="small-note" data-i18n="chartDesc">برای بررسی چارت کامل و ابزارهای تکنیکال، نماد موردنظر را باز کنید.</p>
+<div class="section-head"><div><span class="overline">CHART STUDIO</span><h2 data-i18n="chart">Advanced charts</h2></div><span class="pill">TradingView</span></div>
+<p class="small-note" data-i18n="chartDesc">Open a full TradingView chart for technical analysis and drawing tools.</p>
 <div class="symbol-links" id="chart-links"></div>
 </div>
 </section>
-<section data-panel="signals" class="panel"><div class="section-head"><div><span class="overline">SIGNAL ENGINE</span><h2 data-i18n="alerts">هشدارهای TradingView</h2></div><button id="refresh-signals" class="outline-button" type="button" data-i18n="refresh">بروزرسانی</button></div><div class="card"><p id="signal-state" class="small-note" aria-live="polite"></p><div id="signal-list" class="signal-list"></div></div></section>
-<section data-panel="watchlist" class="panel"><div class="section-head"><div><span class="overline">YOUR MARKETS</span><h2 data-i18n="favorites">نمادهای منتخب</h2></div></div><div class="card"><p class="small-note" data-i18n="watchHelp">نمادهای موردنظر را انتخاب و ذخیره کنید.</p><div id="watch-options" class="watch-options"></div><button id="save-watch" class="primary-button" type="button" data-i18n="save">ذخیره واچ‌لیست</button><p class="small-note" id="watch-state" aria-live="polite"></p></div></section>
-<section data-panel="ai" class="panel"><div class="section-head"><div><span class="overline">QUANT AI</span><h2 data-i18n="aiTitle">دستیار تحلیلی AI</h2></div><span class="pill">OpenRouter</span></div><div class="card ai-card"><p class="small-note" data-i18n="aiHint">پاسخ‌ها آموزشی‌اند، نه سیگنال قطعی یا توصیه مالی. گفتگو ذخیره نمی‌شود.</p><div id="ai-thread" class="ai-thread" aria-live="polite"></div><form id="ai-form"><label for="ai-prompt" class="small-note" data-i18n="aiLabel">سؤال شما</label><textarea id="ai-prompt" maxlength="1800" rows="3" required></textarea><button id="ai-send" type="submit" class="primary-button" data-i18n="ask">پرسیدن از AI</button></form><p id="ai-status" class="small-note" aria-live="polite"></p></div></section>
-<section data-panel="account" class="panel"><div class="section-head"><div><span class="overline">IDENTITY & ACCESS</span><h2 data-i18n="account">حساب تلگرام</h2></div></div><div class="card"><div class="profile-badge"><div id="avatar">D</div><div><strong id="display-name">—</strong><p id="username" class="small-note">—</p></div></div><div class="key-value"><span data-i18n="userId">شناسه کاربر</span><code id="user-id">—</code></div><div class="key-value"><span data-i18n="appVersion">نسخه</span><code>0.1.0</code></div><div class="key-value"><span data-i18n="execution">اجرای سرورلس</span><code>Telegram</code></div></div><div class="card muted-card"><h3 data-i18n="disabled">بخش‌های غیرفعال در نسخه اولیه</h3><p data-i18n="disabledDesc">پخش زنده، معامله خودکار، MT5، پرداخت و AI تا تکمیل اتصال امن فعال نیستند.</p></div></section>
+<section data-panel="signals" class="panel"><div class="section-head"><div><span class="overline">SIGNAL ENGINE</span><h2 data-i18n="alerts">TradingView alerts</h2></div><button id="refresh-signals" class="outline-button" type="button" data-i18n="refresh">Refresh</button></div><div class="card"><p id="signal-state" class="small-note" aria-live="polite"></p><div id="signal-list" class="signal-list"></div></div></section>
+<section data-panel="watchlist" class="panel"><div class="section-head"><div><span class="overline">YOUR MARKETS</span><h2 data-i18n="favorites">My watchlist</h2></div></div><div class="card"><p class="small-note" data-i18n="watchHelp">Choose symbols, then save your preferences.</p><div id="watch-options" class="watch-options"></div><button id="save-watch" class="primary-button" type="button" data-i18n="save">Save watchlist</button><p class="small-note" id="watch-state" aria-live="polite"></p></div></section>
+<section data-panel="ai" class="panel"><div class="section-head"><div><span class="overline">QUANT AI</span><h2 data-i18n="aiTitle">AI Analysis Assistant</h2></div><span class="pill">OpenRouter</span></div><div class="card ai-card"><p class="small-note" data-i18n="aiHint">Educational explanations, not investment advice. This app does not store your chat history.</p><div id="ai-thread" class="ai-thread" aria-live="polite"></div><form id="ai-form"><label for="ai-prompt" class="small-note" data-i18n="aiLabel">Your question</label><textarea id="ai-prompt" maxlength="1800" rows="3" required dir="auto" placeholder="Ask about market analysis, risk or indicators…" data-i18n-placeholder="aiPlaceholder"></textarea><button id="ai-send" type="submit" class="primary-button" data-i18n="ask">Ask AI</button></form><p id="ai-status" class="small-note" aria-live="polite"></p></div></section>
+<section data-panel="account" class="panel"><div class="section-head"><div><span class="overline">IDENTITY & ACCESS</span><h2 data-i18n="account">Telegram account</h2></div></div><div class="card"><div class="profile-badge"><div id="avatar">D</div><div><strong id="display-name">—</strong><p id="username" class="small-note">—</p></div></div><div class="key-value"><span data-i18n="userId">User ID</span><code id="user-id">—</code></div><div class="key-value"><span data-i18n="appVersion">Version</span><code>0.1.0</code></div><div class="key-value"><span data-i18n="execution">Serverless runtime</span><code>Telegram</code></div></div><div class="card muted-card"><h3 data-i18n="disabled">Not enabled in this release</h3><p data-i18n="disabledDesc">Live streaming, automated trading, MT5 and payments are disabled. AI requires a separately configured secure gateway.</p></div></section>
 </main>
-<footer><span>© DrFXQuant Mini</span><span data-i18n="disclaimer">اطلاعات آموزشی؛ توصیه مالی نیست.</span></footer>
+<footer><span>© DrFXQuant Mini</span><span data-i18n="disclaimer">Educational information; not financial advice.</span></footer>
 </div>
 <script type="module" src="./app.js"></script>
 </body>

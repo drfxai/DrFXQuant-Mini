@@ -1,54 +1,221 @@
 import { GATEWAY_URL } from './config.js';
-// DrFXQuant Mini — no demo market prices, no client-side credentials.
-const tg=window.Telegram?.WebApp;
-tg?.ready?.(); tg?.expand?.();
-const $=id=>document.getElementById(id);
-const symbols=['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'];
-const messages={
- fa:{tabAI:'دستیار AI',aiTitle:'دستیار تحلیلی AI',aiHint:'پاسخ‌ها آموزشی‌اند، نه سیگنال قطعی یا توصیه مالی. گفتگو ذخیره نمی‌شود.',aiLabel:'سؤال شما',ask:'پرسیدن از AI',aiOff:'AI هنوز پیکربندی نشده است.',aiBusy:'درحال دریافت پاسخ...',connecting:'اتصال...',market:'MARKET CONTROL CENTER',headline:'بازار را هوشمندتر دنبال کنید.',lead:'پنل اختصاصی تحلیل، قیمت واقعی و هشدارهای معاملاتی؛ در داخل تلگرام.',mode:'حالت اجرا',tabMarket:'بازار',tabSignals:'سیگنال‌ها',tabWatch:'واچ‌لیست',tabAccount:'حساب',liveQuotes:'قیمت‌های واقعی بازار',refresh:'بروزرسانی',chart:'نمودار پیشرفته',chartDesc:'برای بررسی چارت کامل و ابزارهای تکنیکال، نماد موردنظر را باز کنید.',alerts:'هشدارهای TradingView',favorites:'نمادهای منتخب',watchHelp:'نمادهای موردنظر را انتخاب و ذخیره کنید.',save:'ذخیره واچ‌لیست',account:'حساب تلگرام',userId:'شناسه کاربر',appVersion:'نسخه',execution:'اجرای سرورلس',disabled:'بخش‌های غیرفعال در نسخه اولیه',disabledDesc:'پخش زنده، معامله خودکار، MT5، پرداخت و AI تا تکمیل اتصال امن فعال نیستند.',disclaimer:'اطلاعات آموزشی؛ توصیه مالی نیست.',connected:'متصل',unavailable:'ناموجود',wait:'درحال دریافت قیمت واقعی...',noFeed:'داده زنده در دسترس نیست؛ قیمت تخمینی نمایش داده نمی‌شود.',noSignals:'سیگنال تاییدشده‌ای ثبت نشده است.',signalOff:'Gateway سیگنال هنوز تنظیم نشده است.',saved:'واچ‌لیست ذخیره شد.',notAuthorized:'این پنل را از داخل تلگرام و ربات مرتبط باز کنید.',fetchError:'ارتباط با سرویس برقرار نشد.'},
- en:{tabAI:'AI Assistant',aiTitle:'AI Analysis Assistant',aiHint:'Educational explanations only, not investment advice. This chat is not stored.',aiLabel:'Your question',ask:'Ask AI',aiOff:'AI gateway is not configured.',aiBusy:'Generating a response...',connecting:'Connecting...',market:'MARKET CONTROL CENTER',headline:'Trade with a clearer view.',lead:'A focused dashboard for real prices, analysis and verified signal alerts — inside Telegram.',mode:'Runtime',tabMarket:'Markets',tabSignals:'Signals',tabWatch:'Watchlist',tabAccount:'Account',liveQuotes:'Observed market prices',refresh:'Refresh',chart:'Advanced charts',chartDesc:'Open a full TradingView chart for technical analysis and drawings.',alerts:'TradingView alerts',favorites:'My watchlist',watchHelp:'Choose symbols, then save your preferences.',save:'Save watchlist',account:'Telegram account',userId:'User ID',appVersion:'Version',execution:'Serverless runtime',disabled:'Not enabled in this foundation',disabledDesc:'Live streaming, automated trading, MT5, payments and AI remain disabled until secured integrations are completed.',disclaimer:'Educational information; not financial advice.',connected:'Connected',unavailable:'Unavailable',wait:'Fetching actual market observations...',noFeed:'Market feed unavailable. No estimated prices shown.',noSignals:'No verified signals received.',signalOff:'Signals gateway is not configured yet.',saved:'Watchlist saved.',notAuthorized:'Open this panel from its Telegram bot.',fetchError:'Service connection failed.'}
-};
-let locale='fa';let profile=null;let watch=new Set(['BTCUSDT','ETHUSDT']);
-const tr=k=>messages[locale][k]||k;
-function applyLocale(){document.documentElement.lang=locale;document.documentElement.dir=locale==='fa'?'rtl':'ltr';document.querySelectorAll('[data-i18n]').forEach(x=>x.textContent=tr(x.dataset.i18n));$('lang').textContent=locale==='fa'?'EN':'فا';}
-function api(name,data={}){return new Promise((resolve,reject)=>{if(!tg?.Serverless?.call){reject(new Error('TELEGRAM_REQUIRED'));return;}tg.Serverless.call(name,data,(e,v)=>e?reject(new Error(e.message||'ERROR')):resolve(v));});}
-function setConnection(ok){$('connection').innerHTML='';const dot=document.createTextNode(ok?'● ':'○ ');const span=document.createElement('span');span.textContent=ok?tr('connected'):tr('unavailable');$('connection').append(dot,span);}
-function watchButtons(){const root=$('watch-options');root.replaceChildren();for(const sym of symbols){const b=document.createElement('button');b.className='watch-option'+(watch.has(sym)?' selected':'');b.type='button';b.textContent=sym.replace('USDT',' / USDT');b.setAttribute('aria-pressed',watch.has(sym));b.onclick=()=>{watch.has(sym)?watch.delete(sym):watch.add(sym);watchButtons();};root.append(b);}}
-function charts(){const root=$('chart-links');root.replaceChildren();for(const sym of symbols){const a=document.createElement('a');a.textContent=sym.replace('USDT','/USDT')+' ↗';a.href='https://www.tradingview.com/chart/?symbol=BINANCE%3A'+encodeURIComponent(sym);a.target='_blank';a.rel='noopener noreferrer';root.append(a);}}
-function renderPrice(sym,data){const box=document.createElement('div');box.className='quote-card';const name=document.createElement('div');name.className='asset';name.textContent=sym.replace('USDT',' / USDT');const price=document.createElement('div');price.className='price';const stamp=document.createElement('div');stamp.className='stamp';const source=document.createElement('div');source.className='source';if(data?.error){price.textContent='—';stamp.textContent=tr('noFeed');}else{price.textContent=new Intl.NumberFormat('en-US',{maximumFractionDigits:8}).format(data.price);stamp.textContent=new Date(data.observedAt).toLocaleTimeString(locale==='fa'?'fa-IR':'en-US');source.textContent=data.source+' · indicative';}box.append(name,price,stamp,source);return box;}
-async function loadMarket(){const root=$('quotes');root.replaceChildren();$('market-note').textContent=tr('wait');const data=await Promise.all(symbols.map(async s=>{try{return await api('getPrice',{symbol:s});}catch(_){return {error:true};}}));data.forEach((p,i)=>root.append(renderPrice(symbols[i],p)));$('market-note').textContent=data.every(v=>v.error)?tr('noFeed'):'';}
-function signalCard(s){const div=document.createElement('article');div.className='signal-card';const top=document.createElement('div');top.className='signal-top';const title=document.createElement('strong');title.textContent=String(s.symbol||'—');const side=document.createElement('span');const value=String(s.side||'').toLowerCase();side.className='side '+(value==='buy'?'buy':'sell');side.textContent=value.toUpperCase();const meta=document.createElement('small');meta.textContent=[s.timeframe,s.created_at].filter(Boolean).join(' · ');top.append(title,side);div.append(top,meta);return div;}
-async function loadSignals(){const root=$('signal-list');root.replaceChildren();try{const d=await api('getSignals',{limit:20});$('signal-state').textContent=!d.configured?tr('signalOff'):d.signals.length?'':tr('noSignals');(d.signals||[]).forEach(s=>root.append(signalCard(s)));}catch(_){$('signal-state').textContent=tr('fetchError');}}
-async function loadUser(){try{profile=await api('getProfile');locale=['fa','en'].includes(profile.language)?profile.language:'fa';applyLocale();$('display-name').textContent=profile.firstName||'Telegram user';$('username').textContent=profile.username?'@'+profile.username:'Telegram';$('user-id').textContent=String(profile.id);$('avatar').textContent=(profile.firstName||'D').slice(0,1).toUpperCase();setConnection(true);}catch(_){setConnection(false);$('market-note').textContent=tr('notAuthorized');}try{const saved=await api('getWatchlist');watch=new Set(saved.symbols||[]);watchButtons();}catch(_){}}
-document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-tab]').forEach(n=>n.classList.toggle('active',n===b));document.querySelectorAll('[data-panel]').forEach(n=>n.classList.toggle('visible',n.dataset.panel===b.dataset.tab));if(b.dataset.tab==='signals')loadSignals();}));
+import { LANGUAGES, DEFAULT_LANGUAGE, localeOrDefault, directionFor, translate } from './i18n.js';
 
-function appendAI(text,role){
- const bubble=document.createElement('div');
- bubble.className='ai-bubble '+role;bubble.textContent=text;$('ai-thread').append(bubble);
- bubble.scrollIntoView({block:'nearest'});return bubble;
+// Telegram Mini App: UI translations only. No fake market prices or client-side secrets.
+const tg = window.Telegram?.WebApp;
+tg?.ready?.();
+tg?.expand?.();
+const $ = id => document.getElementById(id);
+const SYMBOLS = ['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'];
+const INTL_LOCALES = { en:'en-US', fa:'fa-IR', ar:'ar', tr:'tr-TR', ru:'ru-RU', hi:'hi-IN' };
+
+let locale = DEFAULT_LANGUAGE;
+let profile = null;
+let connected = false;
+let prices = null;
+let signals = null;
+let selected = new Set();
+let languageRequest = 0;
+const tr = key => translate(locale, key);
+
+function setMessage(id,key) {
+ const el = $(id);
+ if (!el) return;
+ el.dataset.stateKey = key || '';
+ el.textContent = key ? tr(key) : '';
 }
-$('ai-form').addEventListener('submit',async(event)=>{
- event.preventDefault();
- const message=$('ai-prompt').value.trim();
- if(!message)return;
- if(!GATEWAY_URL){$('ai-status').textContent=tr('aiOff');return;}
- if(!tg?.initData){$('ai-status').textContent=tr('notAuthorized');return;}
- $('ai-send').disabled=true;$('ai-status').textContent=tr('aiBusy');
- appendAI(message,'user');$('ai-prompt').value='';
+function changeLocale(next) {
+ locale = localeOrDefault(next);
+ document.documentElement.lang = locale;
+ document.documentElement.dir = directionFor(locale);
+ $('language-select').value = locale;
+ document.querySelectorAll('[data-i18n]').forEach(el => {el.textContent = tr(el.dataset.i18n);});
+ document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {el.placeholder = tr(el.dataset.i18nPlaceholder);});
+ document.querySelectorAll('[data-i18n-aria]').forEach(el => {el.setAttribute('aria-label',tr(el.dataset.i18nAria));});
+ document.querySelectorAll('[data-state-key]').forEach(el => {if(el.dataset.stateKey)el.textContent=tr(el.dataset.stateKey);});
+ setConnection(connected);
+ renderQuotes();
+ renderSignals();
+ renderWatchlist();
+}
+function api(endpoint,input={}) {
+ return new Promise((resolve,reject)=>{
+  if(!tg?.Serverless?.call){reject(new Error('TELEGRAM_REQUIRED'));return;}
+  try{tg.Serverless.call(endpoint,input,(error,value)=>error?reject(new Error(error.message||'ERROR')):resolve(value));}
+  catch(error){reject(error);}
+ });
+}
+function setConnection(value) {
+ connected = Boolean(value);
+ const el = $('connection');
+ el.replaceChildren();
+ const dot = document.createElement('span');
+ dot.textContent=connected?'● ':'○ ';
+ dot.style.color=connected?'#59e0a4':'#ffcc62';
+ const status=document.createElement('span');
+ status.textContent=tr(connected?'connected':'unavailable');
+ el.append(dot,status);
+}
+function renderWatchlist() {
+ const root=$('watch-options');root.replaceChildren();
+ for(const symbol of SYMBOLS) {
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='watch-option'+(selected.has(symbol)?' selected':'');
+  button.textContent=symbol.replace('USDT',' / USDT');
+  button.setAttribute('aria-pressed',String(selected.has(symbol)));
+  button.onclick=()=>{selected.has(symbol)?selected.delete(symbol):selected.add(symbol);renderWatchlist();};
+  root.append(button);
+ }
+}
+function chartLinks() {
+ const root=$('chart-links');root.replaceChildren();
+ for(const symbol of SYMBOLS) {
+  const a=document.createElement('a');
+  a.textContent=symbol.replace('USDT',' / USDT')+' ↗';
+  a.href='https://www.tradingview.com/chart/?symbol=BINANCE%3A'+encodeURIComponent(symbol);
+  a.target='_blank';a.rel='noopener noreferrer';
+  root.append(a);
+ }
+}
+function renderQuotes() {
+ if(!prices)return;
+ const root=$('quotes');root.replaceChildren();
+ for(let i=0;i<SYMBOLS.length;i++){
+  const data=prices[i];
+  const box=document.createElement('div');box.className='quote-card';
+  const asset=document.createElement('div');asset.className='asset';asset.dir='ltr';asset.textContent=SYMBOLS[i].replace('USDT',' / USDT');
+  const price=document.createElement('div');price.className='price';price.dir='ltr';
+  const when=document.createElement('div');when.className='stamp';
+  const source=document.createElement('div');source.className='source';
+  if(data?.error || typeof data?.price!=='number' || !Number.isFinite(data.price)){
+   price.textContent='—';when.textContent=tr('noFeed');
+  }else{
+   price.textContent=new Intl.NumberFormat('en-US',{maximumFractionDigits:8}).format(data.price);
+   const formatted=new Intl.DateTimeFormat(INTL_LOCALES[locale],{hour:'2-digit',minute:'2-digit'}).format(new Date(data.observedAt));
+   when.textContent=tr('observation')+': '+formatted;
+   source.textContent=data.source+' · '+tr('indicative');
+  }
+  box.append(asset,price,when,source);root.append(box);
+ }
+}
+async function loadMarket() {
+ setMessage('market-note','wait');
+ const response=await Promise.all(SYMBOLS.map(async symbol=>{try{return await api('getPrice',{symbol});}catch(_){return {error:true};}}));
+ prices=response;renderQuotes();
+ setMessage('market-note',response.every(d=>d.error)?'noFeed':'');
+}
+function renderSignals() {
+ if(!signals)return;
+ const root=$('signal-list');root.replaceChildren();
+ if(!signals.configured)setMessage('signal-state','signalOff');
+ else if(!Array.isArray(signals.signals)||!signals.signals.length)setMessage('signal-state','noSignals');
+ else setMessage('signal-state','signalNote');
+ for(const item of signals.signals||[]){
+  const card=document.createElement('article');card.className='signal-card';
+  const top=document.createElement('div');top.className='signal-top';
+  const name=document.createElement('strong');name.dir='auto';name.textContent=String(item.symbol||'—');
+  const side=document.createElement('span');
+  const code=String(item.side||'').toLowerCase();
+  side.className='side '+(code==='buy'?'buy':'sell');side.textContent=tr(['buy','sell','close','alert'].includes(code)?code:'alert');
+  const timestamp=document.createElement('small');
+  timestamp.dir='auto';
+  const safeTime=item.created_at&&Number.isFinite(Date.parse(item.created_at))
+   ?new Intl.DateTimeFormat(INTL_LOCALES[locale],{dateStyle:'medium',timeStyle:'short'}).format(new Date(item.created_at))
+   :String(item.created_at||'');
+  timestamp.textContent=[item.timeframe,safeTime].filter(Boolean).join(' · ');
+  top.append(name,side);card.append(top,timestamp);root.append(card);
+ }
+}
+async function loadSignals() {
+ setMessage('signal-state','wait');
+ try{signals=await api('getSignals',{limit:20});renderSignals();}
+ catch(_){signals=null;$('signal-list').replaceChildren();setMessage('signal-state','fetchError');}
+}
+async function loadUser() {
  try{
-  const res=await fetch(GATEWAY_URL.replace(/\/$/,'')+'/api/ai',{
+  profile=await api('getProfile');
+  // An explicitly saved preference takes priority; new users default to English.
+  changeLocale(localeOrDefault(profile?.language));
+  $('display-name').textContent=profile.firstName||tr('noName');
+  $('username').textContent=profile.username?'@'+profile.username:'Telegram';
+  $('user-id').textContent=String(profile.id);
+  $('avatar').textContent=(profile.firstName||'D').slice(0,1).toUpperCase();
+  setConnection(true);
+ }catch(_){
+  setConnection(false);
+  setMessage('market-note','notAuthorized');
+ }
+ try{
+  const watch=await api('getWatchlist');
+  if(Array.isArray(watch.symbols))selected=new Set(watch.symbols.filter(x=>SYMBOLS.includes(x)));
+  renderWatchlist();
+ }catch(_){}
+}
+
+document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener('click',()=>{
+ document.querySelectorAll('[data-tab]').forEach(tab=>tab.classList.toggle('active',tab===button));
+ document.querySelectorAll('[data-panel]').forEach(panel=>panel.classList.toggle('visible',panel.dataset.panel===button.dataset.tab));
+ if(button.dataset.tab==='signals')loadSignals();
+}));
+
+$('language-select').addEventListener('change',async event=>{
+ const requested=localeOrDefault(event.target.value);
+ const requestNumber=++languageRequest;
+ changeLocale(requested);
+ setMessage('watch-state','');
+ if(!profile)return;
+ try{
+  await api('saveSettings',{language:requested});
+  if(requestNumber===languageRequest)setMessage('watch-state','languageSaved');
+ }catch(_){
+  if(requestNumber===languageRequest)setMessage('watch-state','updateFailed');
+ }
+});
+
+function addAIMessage(text,role) {
+ const bubble=document.createElement('div');
+ bubble.className='ai-bubble '+role;
+ bubble.textContent=text;
+ bubble.dir='auto';
+ $('ai-thread').append(bubble);
+ bubble.scrollIntoView({block:'nearest'});
+}
+$('ai-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const prompt=$('ai-prompt').value.trim();
+ if(!prompt)return;
+ if(!GATEWAY_URL){setMessage('ai-status','aiOff');return;}
+ if(!tg?.initData){setMessage('ai-status','notAuthorized');return;}
+ $('ai-send').disabled=true;setMessage('ai-status','aiBusy');
+ addAIMessage(prompt,'user');$('ai-prompt').value='';
+ try {
+  const response=await fetch(GATEWAY_URL.replace(/\/$/,'')+'/api/ai',{
    method:'POST',headers:{'Content-Type':'application/json','x-telegram-init-data':tg.initData},
-   body:JSON.stringify({prompt:message})
+   body:JSON.stringify({prompt})
   });
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const data=await res.json();
-  if(typeof data.answer!=='string')throw new Error('No answer');
-  appendAI(data.answer,'assistant');$('ai-status').textContent='';
- }catch(_){$('ai-status').textContent=tr('fetchError');}
+  if(!response.ok)throw new Error('UPSTREAM_ERROR');
+  const result=await response.json();
+  if(typeof result.answer!=='string')throw new Error('MISSING_ANSWER');
+  addAIMessage(result.answer,'assistant');setMessage('ai-status','');
+ }catch(_){setMessage('ai-status','fetchError');}
  finally{$('ai-send').disabled=false;}
 });
 
-$('lang').onclick=async()=>{locale=locale==='fa'?'en':'fa';applyLocale();watchButtons();if(profile)try{await api('saveSettings',{language:locale});}catch(_){ } };
-$('refresh').onclick=loadMarket;$('refresh-signals').onclick=loadSignals;
-$('save-watch').onclick=async()=>{const b=$('save-watch');b.disabled=true;try{await api('saveWatchlist',{symbols:[...watch]});$('watch-state').textContent=tr('saved');}catch(_){$('watch-state').textContent=tr('fetchError');}finally{b.disabled=false;}};
-applyLocale();watchButtons();charts();await loadUser();await loadMarket();
+$('refresh').onclick=loadMarket;
+$('refresh-signals').onclick=loadSignals;
+$('save-watch').onclick=async()=>{
+ $('save-watch').disabled=true;
+ try{
+  const saved=await api('saveWatchlist',{symbols:[...selected]});
+  if(Array.isArray(saved?.symbols))selected=new Set(saved.symbols);
+  renderWatchlist();setMessage('watch-state','saved');
+ }catch(_){setMessage('watch-state','saveFailed');}
+ finally{$('save-watch').disabled=false;}
+};
+
+changeLocale(DEFAULT_LANGUAGE);
+renderWatchlist();
+chartLinks();
+await loadUser();
+await loadMarket();
