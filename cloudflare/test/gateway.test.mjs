@@ -38,3 +38,35 @@ test('malformed signal is rejected',async()=>{
  const db=mockDb(),ctx={waitUntil(){}},env={SIGNALS_DB:db,TRADINGVIEW_WEBHOOK_SECRET:'really-long-secret'};
  const r=await worker.fetch(req({secret:'really-long-secret',symbol:'BTCUSDT',side:'buy',price:'not-real'}),env,ctx);assert.equal(r.status,400);
 });
+
+test('AI requires exact Mini App origin and valid Telegram initData signature',async()=>{
+ const env={ALLOWED_ORIGIN:'https://app123.tgcloud.ai',TELEGRAM_BOT_TOKEN:'123:TEST_BOT',OPENROUTER_API_KEY:'fake-test-key',OPENROUTER_MODEL:'test/model',SIGNALS_DB:{
+   prepare(){return {bind(){return this;},async first(){return {requests:1};}};}
+ }};
+ const url='https://gateway.test/api/ai';
+ const invalidOrigin=new Request(url,{method:'POST',headers:{'origin':'https://evil.invalid','Content-Type':'application/json'},body:JSON.stringify({prompt:'Explain RSI'})});
+ assert.equal((await worker.fetch(invalidOrigin,env,{})).status,403);
+ const invalidAuth=new Request(url,{method:'POST',headers:{'origin':env.ALLOWED_ORIGIN,'Content-Type':'application/json','x-telegram-init-data':'user=abc'},body:JSON.stringify({prompt:'Explain RSI'})});
+ assert.equal((await worker.fetch(invalidAuth,env,{})).status,401);
+});
+test('AI accepts a correctly signed recent user and returns provider content',async()=>{
+ const {createHmac}=await import('node:crypto');
+ const bot='123:TEST_BOT',origin='https://app123.tgcloud.ai';
+ const auth_date=String(Math.floor(Date.now()/1000));
+ const user=JSON.stringify({id:987654321,first_name:'Test'});
+ const check='auth_date='+auth_date+'\\nuser='+user;
+ const secret=createHmac('sha256','WebAppData').update(bot).digest();
+ const hash=createHmac('sha256',secret).update(check).digest('hex');
+ const init=new URLSearchParams({auth_date,user,hash}).toString();
+ const env={ALLOWED_ORIGIN:origin,TELEGRAM_BOT_TOKEN:bot,OPENROUTER_API_KEY:'fake-test-key',OPENROUTER_MODEL:'test/model',SIGNALS_DB:{
+   prepare(){return {bind(){return this;},async first(){return {requests:1};}};}
+ }};
+ const upstream=globalThis.fetch;
+ globalThis.fetch=async()=>new Response(JSON.stringify({choices:[{message:{content:'RSI is a momentum oscillator.'}}]}),{status:200,headers:{'Content-Type':'application/json'}});
+ try{
+  const request=new Request('https://gateway.test/api/ai',{method:'POST',headers:{'Origin':origin,'Content-Type':'application/json','x-telegram-init-data':init},body:JSON.stringify({prompt:'Explain RSI'})});
+  const response=await worker.fetch(request,env,{});
+  assert.equal(response.status,200);
+  const result=await response.json();assert.equal(result.model,'test/model');assert.match(result.answer,/RSI/);
+ }finally{globalThis.fetch=upstream;}
+});
