@@ -54,7 +54,7 @@ test('AI accepts a correctly signed recent user and returns provider content',as
  const bot='123:TEST_BOT',origin='https://app123.tgcloud.ai';
  const auth_date=String(Math.floor(Date.now()/1000));
  const user=JSON.stringify({id:987654321,first_name:'Test'});
- const check='auth_date='+auth_date+'\\nuser='+user;
+ const check='auth_date='+auth_date+'\nuser='+user;
  const secret=createHmac('sha256','WebAppData').update(bot).digest();
  const hash=createHmac('sha256',secret).update(check).digest('hex');
  const init=new URLSearchParams({auth_date,user,hash}).toString();
