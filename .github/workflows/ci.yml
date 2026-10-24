@@ -1,0 +1,17 @@
+name: Mini Foundation Checks
+on:
+  push:
+    branches: ['feat/**', 'main']
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/static-check.mjs
+      - run: cd cloudflare && node --test test/*.test.mjs

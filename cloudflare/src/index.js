@@ -12,7 +12,7 @@ function parseSignal(o){
  const symbol=String(o.symbol||'').trim().toUpperCase(),side=String(o.side||'').trim().toLowerCase();
  const type=({long:'buy',short:'sell',buy:'buy',sell:'sell',close:'close',alert:'alert'})[side];
  if(!/^[A-Z0-9._:/-]{2,32}$/.test(symbol)||!type)return null;
- const timeframe=String(o.timeframe||'').trim().slice(0,16)||'—';
+ const timeframe=String(o.timeframe||'').trim().slice(0,16)||'na';
  if(!/^[A-Za-z0-9 _-]{1,16}$/.test(timeframe))return null;
  for(const name of ['price','stop_loss','take_profit'])if(o[name]!==undefined&&o[name]!==null&&o[name]!==''&&finiteOptional(o[name])===null)return null;
  return {symbol,side:type,timeframe,price:finiteOptional(o.price),stop_loss:finiteOptional(o.stop_loss),take_profit:finiteOptional(o.take_profit),strategy:String(o.strategy||'').slice(0,100)};
