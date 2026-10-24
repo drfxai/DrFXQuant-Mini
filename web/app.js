@@ -36,7 +36,7 @@ $('ai-form').addEventListener('submit',async(event)=>{
  $('ai-send').disabled=true;$('ai-status').textContent=tr('aiBusy');
  appendAI(message,'user');$('ai-prompt').value='';
  try{
-  const res=await fetch(GATEWAY_URL.replace(/\\/$/,'')+'/api/ai',{
+  const res=await fetch(GATEWAY_URL.replace(/\/$/,'')+'/api/ai',{
    method:'POST',headers:{'Content-Type':'application/json','x-telegram-init-data':tg.initData},
    body:JSON.stringify({prompt:message})
   });

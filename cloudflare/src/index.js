@@ -80,7 +80,7 @@ async function verifyMiniApp(initData,token){
  if(!provided||!/^[a-fA-F0-9]{64}$/.test(provided)||!Number.isSafeInteger(authTime))return null;
  const age=Math.floor(Date.now()/1000)-authTime;
  if(age< -30||age>900)return null;
- const check=[...form.entries()].filter(([key])=>key!=='hash').sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([k,value])=>k+'='+value).join('\\n');
+ const check=[...form.entries()].filter(([key])=>key!=='hash').sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0).map(([k,value])=>k+'='+value).join('\n');
  const secret=await hmacSha256(te.encode('WebAppData'),token);
  const signed=await hmacSha256(secret,check);
  const expected=[...signed].map(x=>x.toString(16).padStart(2,'0')).join('');
