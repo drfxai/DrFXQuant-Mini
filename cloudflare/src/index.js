@@ -1,3 +1,4 @@
+import { botText } from './bot-i18n.js';
 // DrFXQuant Mini: public TradingView webhook ingress, durable D1 inbox & bot relay.
 // Source behavior adapted from legacy routes/webhooks.js; no Express/PM2/WebSocket.
 // No trading execution, payments or financial balances in this gateway.
@@ -94,7 +95,7 @@ async function aiReply(request,env){
  const cors=aiCors(origin);
  if(request.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
  if(request.method!=='POST')return json({error:'method_not_allowed'},405,cors);
- if(!env.OPENROUTER_API_KEY||!env.OPENROUTER_MODEL||!env.TELEGRAM_BOT_TOKEN||!env.SIGNALS_DB)return json({error:'ai_not_configured'},503,cors);
+ if((!env.AI&&!(env.OPENROUTER_API_KEY&&env.OPENROUTER_MODEL))||!env.TELEGRAM_BOT_TOKEN||!env.SIGNALS_DB)return json({error:'ai_not_configured'},503,cors);
  const user=await verifyMiniApp(request.headers.get('x-telegram-init-data'),env.TELEGRAM_BOT_TOKEN);
  if(!user)return json({error:'unauthorized'},401,cors);
  let req;try{req=await request.json();}catch(_){return json({error:'invalid_json'},400,cors);}
@@ -105,6 +106,17 @@ async function aiReply(request,env){
   'INSERT INTO ai_usage (user_id,day,requests) VALUES (?,?,1) ON CONFLICT(user_id,day) DO UPDATE SET requests=requests+1 WHERE requests < 20 RETURNING requests'
  ).bind(userId,day).first();
  if(!quota)return json({error:'daily_quota_reached'},429,cors);
+ if(env.AI&&(!env.OPENROUTER_API_KEY||!env.OPENROUTER_MODEL)){
+  try{
+   const model='@cf/meta/llama-3.1-8b-instruct-fp8-fast';
+   const output=await env.AI.run(model,{messages:[
+    {role:'system',content:'You are DrFXQuant Mini, a multilingual educational trading assistant. Never invent live price data, execute trades, or promise profits. Answer in the language of the user.'},
+    {role:'user',content:prompt}],max_tokens:650});
+   const answer=output?.response;
+   if(typeof answer!=='string'||!answer.trim())throw Error('no_answer');
+   return json({answer:answer.slice(0,6500),model,educational:true},200,cors);
+  }catch(_){return json({error:'ai_provider_unavailable'},502,cors);}
+ }
  let upstream;
  try{
   upstream=await fetch('https://openrouter.ai/api/v1/chat/completions',{
@@ -160,7 +172,7 @@ async function appEndpoint(request,env){
     return json({id:user.id,firstName:String(user.first_name||''),username:String(user.username||''),language:lang,source:'telegram'});
    }
    case 'getCapabilities':
-    return json({version:'0.2.0',serverless:true,platform:'cloudflare',defaultLanguage:'en',supportedLanguages:LANGUAGES,symbols:SYMBOLS,signalsConfigured:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET),features:{liveStreaming:false,mt5:false,autotrade:false,payments:false,ai:Boolean(env.OPENROUTER_API_KEY&&env.OPENROUTER_MODEL),alerts:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET)}});
+    return json({version:'0.2.0',serverless:true,platform:'cloudflare',defaultLanguage:'en',supportedLanguages:LANGUAGES,symbols:SYMBOLS,signalsConfigured:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET),features:{liveStreaming:false,mt5:false,autotrade:false,payments:false,ai:Boolean(env.AI||(env.OPENROUTER_API_KEY&&env.OPENROUTER_MODEL)),alerts:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET)}});
    case 'getPrice':{
     const data=await marketPrice(input.symbol);
     return data.error?error(data.error,data.error==='UNSUPPORTED_SYMBOL'?400:503):json(data);
@@ -206,12 +218,14 @@ async function telegramWebhook(request,env){
  const msg=update.message,chatId=msg.chat.id,userId=msg.from?.id,token=msg.text.trim().split(/\s+/);
  const op=(token[0]||'').split('@')[0].toLowerCase();
  if(msg.chat.type!=='private'&&!op.startsWith('/'))return json({ok:true});
+ const language=userId&&env.SIGNALS_DB?await languageFor(env,userId):'en';
+ const t=key=>botText(language,key);
  let answer='';
- if(op==='/start'||op==='/help')answer='Welcome to DrFXQuant Mini\n/price BTCUSDT — Spot price\n/signals — Latest alerts\n/language en|fa|ar|tr|ru|hi — Change language\nOpen the Mini App from the bot menu.';
- else if(op==='/price'){const s=selectedSymbol(token[1]);if(!s)answer='Usage: /price BTCUSDT';else{const data=await marketPrice(s);answer=data.error?'Live price unavailable':s+' · '+data.price+' USDT\nSource: '+data.source+'\nObserved: '+new Date(data.observedAt).toISOString();}}
- else if(op==='/signals'){if(!env.SIGNALS_DB)answer='Signal storage unavailable';else{const rows=await env.SIGNALS_DB.prepare('SELECT symbol,side,timeframe,created_at FROM signals ORDER BY created_at DESC LIMIT 5').all();answer=(rows.results||[]).map(x=>x.symbol+' '+x.side.toUpperCase()+' '+x.timeframe+' · '+x.created_at).join('\n')||'No signal alerts yet';}}
- else if(op==='/language'){if(!LANGUAGES.includes(token[1]))answer='Usage: /language en|fa|ar|tr|ru|hi';else if(!userId||!env.SIGNALS_DB)answer='Settings unavailable';else{await env.SIGNALS_DB.prepare('INSERT INTO user_settings(user_id,language) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET language=excluded.language').bind(String(userId),token[1]).run();answer='Language saved: '+token[1];}}
- else if(msg.chat.type==='private')answer='Use /help for commands.';
+ if(op==='/start'||op==='/help')answer=t('help');
+ else if(op==='/price'){const s=selectedSymbol(token[1]);if(!s)answer=t('priceUsage');else{const data=await marketPrice(s);answer=data.error?t('noFeed'):s+' · '+data.price+' USDT\n'+t('source')+': '+data.source+'\n'+t('observation')+': '+new Date(data.observedAt).toISOString()+'\n'+t('indicative');}}
+ else if(op==='/signals'){if(!env.SIGNALS_DB)answer='Signal storage unavailable';else{const rows=await env.SIGNALS_DB.prepare('SELECT symbol,side,timeframe,created_at FROM signals ORDER BY created_at DESC LIMIT 5').all();answer=(rows.results||[]).length?t('signalTitle')+'\n\n'+rows.results.map(x=>x.symbol+' '+x.side.toUpperCase()+' '+x.timeframe+' · '+x.created_at).join('\n'):t('noSignals');}}
+ else if(op==='/language'){if(!LANGUAGES.includes(token[1]))answer=t('languageUsage');else if(!userId||!env.SIGNALS_DB)answer='Settings unavailable';else{await env.SIGNALS_DB.prepare('INSERT INTO user_settings(user_id,language) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET language=excluded.language').bind(String(userId),token[1]).run();answer=botText(token[1],'languageSaved');}}
+ else if(msg.chat.type==='private')answer=t('helpShort');
  if(answer)await sendTelegram(env,chatId,answer);
  return json({ok:true});
 }

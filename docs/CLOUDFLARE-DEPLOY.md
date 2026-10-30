@@ -2,7 +2,7 @@
 
 This repo now has an independent Cloudflare Workers deployment for the existing Mini App foundation.
 Web, six locales, Telegram bot commands, authenticated user profile, watchlists, Binance quotes,
-public TradingView signals, and optional AI all run on Cloudflare.
+public TradingView signals, and AI via Cloudflare Workers AI free allocation run on Cloudflare. Optional OpenRouter can be configured as an override.
 Live streaming remains disabled. Legacy QNTM wallet, payment processing, MT5 live execution,
 Auto-Trade and independent messenger have **not** been migrated and are **not** represented as functional.
 
