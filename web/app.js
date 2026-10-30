@@ -38,13 +38,13 @@ function changeLocale(next) {
  renderSignals();
  renderWatchlist();
 }
-function api(endpoint,input={}) {
- return new Promise((resolve,reject)=>{
-  if(!tg?.Serverless?.call){reject(new Error('TELEGRAM_REQUIRED'));return;}
-  try{tg.Serverless.call(endpoint,input,(error,value)=>error?reject(new Error(error.message||'ERROR')):resolve(value));}
-  catch(error){reject(error);}
- });
+async function api(endpoint,input={}) {
+ if(!tg?.initData)throw new Error('TELEGRAM_REQUIRED');
+ const response=await fetch('/api/app/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json','x-telegram-init-data':tg.initData},body:JSON.stringify(input)});
+ if(!response.ok)throw new Error('API_'+response.status);
+ return response.json();
 }
+
 function setConnection(value) {
  connected = Boolean(value);
  const el = $('connection');

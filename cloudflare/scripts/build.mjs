@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
+const dir=path.dirname(new URL(import.meta.url).pathname);
+const root=path.resolve(dir,'../..');
+const paths=['index.html','app.js','style.css','i18n.js','config.js','icon.svg','manifest.webmanifest'];
+const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.webmanifest':'application/manifest+json'};
+const assets=Object.fromEntries(paths.map(name=>['/'+name,{body:fs.readFileSync(path.join(root,'web',name),'utf8'),type:types[path.extname(name)]}]));
+const botLocale=fs.readFileSync(path.join(dir,'../src/bot-i18n.js'),'utf8').replace(/\bexport\s+/g,'');
+const source=fs.readFileSync(path.join(dir,'../src/index.js'),'utf8').replace("import { botText } from './bot-i18n.js';",botLocale);
+if(!source.includes('"__STATIC_ASSETS__"'))throw Error('Static asset insertion marker missing');
+const output=source.replace('"__STATIC_ASSETS__"',JSON.stringify(assets));
+const dist=path.join(dir,'../dist');fs.mkdirSync(dist,{recursive:true});
+fs.writeFileSync(path.join(dist,'worker.mjs'),output);
+console.log('Bundled '+paths.length+' static assets into '+path.join(dist,'worker.mjs'));

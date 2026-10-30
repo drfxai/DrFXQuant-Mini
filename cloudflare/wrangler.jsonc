@@ -1,18 +1,28 @@
 {
   "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
-  "name": "drfxquant-mini-gateway",
-  "main": "src/index.js",
+  "name": "drfxquant-mini",
+  "main": "dist/worker.mjs",
   "compatibility_date": "2026-10-24",
-  "observability": {"enabled": true},
+  "observability": {
+    "enabled": true
+  },
   "vars": {
-    "SIGNAL_CHANNEL_ID": "",
     "ALLOWED_ORIGIN": ""
   },
-  "triggers": {"crons": ["* * * * *"]},
-  "d1_databases": [{
-    "binding": "SIGNALS_DB",
-    "database_name": "drfxquant-mini-signals",
-    "database_id": "REPLACE_WITH_CREATED_D1_UUID",
-    "migrations_dir": "migrations"
-  }]
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "SIGNALS_DB",
+      "database_name": "drfxquant-mini",
+      "database_id": "3fdb52b2-a998-4cd5-ae1b-3307d7918c4e",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  }
 }

@@ -1,6 +1,10 @@
+# Cloudflare deployment
+
+See [docs/CLOUDFLARE-DEPLOY.md](docs/CLOUDFLARE-DEPLOY.md). Cloudflare Workers is the preferred runtime; Telegram Serverless remains a legacy optional path.
+
 # DrFXQuant Mini — Telegram Serverless Foundation
 
-**Status: foundation implementation (not deployed).** This is an independent migration of DrFXQuant v5.2.0, built for **Telegram Mini App + Telegram Serverless**. The original DrFXQuant source is not modified.
+**Status: Cloudflare-native foundation; external integrations require secrets and bot setup.** This is an independent migration of DrFXQuant v5.2.0, built for **Telegram Mini App + Telegram Serverless**. The original DrFXQuant source is not modified.
 
 ## Implemented
 - Telegram Serverless command handler: `/start`, `/help`, `/price BTCUSDT`, `/signals`

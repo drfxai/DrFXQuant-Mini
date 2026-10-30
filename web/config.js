@@ -1,3 +1,2 @@
-// Public endpoint only. Configure to match tgcloud/lib/config.js.
-// NEVER put API keys, Bot tokens or secrets in web assets.
-export const GATEWAY_URL = '';
+// Single-origin Cloudflare Worker. No secret values in this public file.
+export const GATEWAY_URL = location.origin;
