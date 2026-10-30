@@ -202,9 +202,50 @@ async function appEndpoint(request,env){
   }
  }catch(_){return error('database_unavailable',503);}
 }
-async function sendTelegram(env,chatId,message){
+
+// Keep Telegram's webhook and the bot's Mini App menu configured using Worker secrets.
+const APP_URL='https://drfxquant-mini.drfxai.workers.dev/';
+async function botApi(env,method,payload={}){
+ const r=await fetch('https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/'+method,{
+  method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)
+ });
+ const data=await r.json();
+ if(!r.ok||!data.ok)throw new Error(method+':'+String(data.error_code||r.status)+':'+String(data.description||'API failure').slice(0,100));
+ return data.result;
+}
+async function configureBot(env){
+ if(!env.TELEGRAM_BOT_TOKEN||!env.TELEGRAM_WEBHOOK_SECRET||!env.SIGNALS_DB)return;
+ const now=Date.now();
+ const previous=await env.SIGNALS_DB.prepare('SELECT status,last_attempt FROM bot_setup_status WHERE id=1').first();
+ if(previous?.status==='ready'&&now-previous.last_attempt<6*60*60*1000)return;
+ let status='error',reason='',username='';
+ try{
+  const me=await botApi(env,'getMe');
+  if(!me?.is_bot)throw new Error('Invalid Telegram bot');
+  username=String(me.username||'');
+  const webhook=new URL('api/bot/webhook',APP_URL).href;
+  await botApi(env,'setWebhook',{url:webhook,secret_token:env.TELEGRAM_WEBHOOK_SECRET,allowed_updates:['message'],drop_pending_updates:false});
+  await botApi(env,'setChatMenuButton',{menu_button:{type:'web_app',text:'Open DrFXQuant',web_app:{url:APP_URL}}});
+  const info=await botApi(env,'getWebhookInfo');
+  const menu=await botApi(env,'getChatMenuButton');
+  if(info?.url!==webhook||menu?.type!=='web_app'||menu?.web_app?.url!==APP_URL)throw new Error('Telegram setup verification failed');
+  status='ready';
+ }catch(e){reason=String(e?.message||'Telegram setup error').replace(/bot\d+:[A-Za-z0-9_-]+/gi,'bot[redacted]').slice(0,160);}
+ await env.SIGNALS_DB.prepare(
+  'INSERT INTO bot_setup_status(id,status,last_attempt,last_ready,last_error,bot_username) VALUES(1,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET status=excluded.status,last_attempt=excluded.last_attempt,last_ready=excluded.last_ready,last_error=excluded.last_error,bot_username=excluded.bot_username'
+ ).bind(status,now,status==='ready'?now:null,reason,username).run();
+}
+async function botStatus(env){
+ if(!env.TELEGRAM_BOT_TOKEN||!env.TELEGRAM_WEBHOOK_SECRET)return json({configured:false,ready:false,status:'missing_secrets'},503);
+ try{
+  const x=await env.SIGNALS_DB.prepare('SELECT status,last_attempt,last_ready,last_error,bot_username FROM bot_setup_status WHERE id=1').first();
+  return json({configured:true,ready:x?.status==='ready',status:x?.status||'pending',username:x?.bot_username||null,lastAttempt:x?.last_attempt||null,lastReady:x?.last_ready||null,error:x?.last_error||null});
+ }catch(_){return json({configured:true,ready:false,status:'database_unavailable'},503);}
+}
+
+async function sendTelegram(env,chatId,message,replyMarkup=null){
  const url='https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/sendMessage';
- const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({chat_id:chatId,text:message,disable_web_page_preview:true})});
+ const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({chat_id:chatId,text:message,disable_web_page_preview:true,...(replyMarkup?{reply_markup:replyMarkup}:{})})});
  return r.ok;
 }
 async function telegramWebhook(request,env){
@@ -221,12 +262,12 @@ async function telegramWebhook(request,env){
  const language=userId&&env.SIGNALS_DB?await languageFor(env,userId):'en';
  const t=key=>botText(language,key);
  let answer='';
- if(op==='/start'||op==='/help')answer=t('help');
+ if(op==='/start'||op==='/help'||op==='/app')answer=t('help');
  else if(op==='/price'){const s=selectedSymbol(token[1]);if(!s)answer=t('priceUsage');else{const data=await marketPrice(s);answer=data.error?t('noFeed'):s+' · '+data.price+' USDT\n'+t('source')+': '+data.source+'\n'+t('observation')+': '+new Date(data.observedAt).toISOString()+'\n'+t('indicative');}}
  else if(op==='/signals'){if(!env.SIGNALS_DB)answer='Signal storage unavailable';else{const rows=await env.SIGNALS_DB.prepare('SELECT symbol,side,timeframe,created_at FROM signals ORDER BY created_at DESC LIMIT 5').all();answer=(rows.results||[]).length?t('signalTitle')+'\n\n'+rows.results.map(x=>x.symbol+' '+x.side.toUpperCase()+' '+x.timeframe+' · '+x.created_at).join('\n'):t('noSignals');}}
  else if(op==='/language'){if(!LANGUAGES.includes(token[1]))answer=t('languageUsage');else if(!userId||!env.SIGNALS_DB)answer='Settings unavailable';else{await env.SIGNALS_DB.prepare('INSERT INTO user_settings(user_id,language) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET language=excluded.language').bind(String(userId),token[1]).run();answer=botText(token[1],'languageSaved');}}
  else if(msg.chat.type==='private')answer=t('helpShort');
- if(answer)await sendTelegram(env,chatId,answer);
+ if(answer){const markup=msg.chat.type==='private'&&['/start','/help','/app'].includes(op)?{inline_keyboard:[[{text:'🚀 Open DrFXQuant Mini',web_app:{url:APP_URL}}]]}:null;await sendTelegram(env,chatId,answer,markup);}
  return json({ok:true});
 }
 // Build-time static asset injection. Source can still be imported by Node tests.
@@ -244,6 +285,7 @@ export default {
   if(request.method==='GET'){const asset=serveAsset(url.pathname);if(asset)return asset;}
   if(url.pathname.startsWith('/api/app/'))return appEndpoint(request,env);
   if(url.pathname==='/api/bot/webhook')return telegramWebhook(request,env);
+  if(url.pathname==='/api/bot/status'&&request.method==='GET')return botStatus(env);
   if(url.pathname==='/api/ai')return aiReply(request,env);
   if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'DrFXQuant Mini',version:'0.2.0',configured:{telegram:Boolean(env.TELEGRAM_BOT_TOKEN),market:true,signals:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET),ai:Boolean(env.OPENROUTER_API_KEY&&env.OPENROUTER_MODEL)}});
   if(url.pathname==='/api/webhooks/tradingview'){
@@ -258,5 +300,5 @@ export default {
   }
   return json({error:'not_found'},404);
  },
- async scheduled(_event,env,_ctx){if(env.SIGNALS_DB)await relayPending(env);}
+ async scheduled(_event,env,_ctx){if(env.SIGNALS_DB)await Promise.allSettled([configureBot(env),relayPending(env)]);}
 };
