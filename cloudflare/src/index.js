@@ -122,11 +122,116 @@ async function aiReply(request,env){
  }catch(_){return json({error:'ai_provider_unavailable'},502,cors);}
 }
 
+
+// Cloudflare-native Telegram Mini App and bot runtime. Nothing here places trades.
+const LANGUAGES=['en','fa','ar','tr','ru','hi'];
+const SYMBOLS=['BTCUSDT','ETHUSDT','SOLUSDT','BNBUSDT'];
+function error(code,status=400){return json({error:code},status);}
+function selectedSymbol(x){const s=String(x||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return SYMBOLS.includes(s)?s:null;}
+async function marketPrice(symbol){
+ const s=selectedSymbol(symbol);
+ if(!s)return {error:'UNSUPPORTED_SYMBOL'};
+ try{
+  const r=await fetch('https://api.binance.com/api/v3/ticker/price?symbol='+encodeURIComponent(s),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(7000)});
+  if(!r.ok)return {error:'MARKET_FEED_UNAVAILABLE'};
+  const data=await r.json(),price=Number(data.price);
+  if(data.symbol!==s||!Number.isFinite(price)||price<=0)return {error:'MARKET_FEED_INVALID'};
+  return {symbol:s,price,observedAt:Date.now(),source:'Binance public REST',indicative:true};
+ }catch(_){return {error:'MARKET_FEED_UNAVAILABLE'};}
+}
+async function languageFor(env,id){
+ const row=await env.SIGNALS_DB.prepare('SELECT language FROM user_settings WHERE user_id=?').bind(String(id)).first();
+ return LANGUAGES.includes(row?.language)?row.language:'en';
+}
+async function appEndpoint(request,env){
+ if(request.method!=='POST')return error('method_not_allowed',405);
+ if(!env.TELEGRAM_BOT_TOKEN)return error('telegram_not_configured',503);
+ const user=await verifyMiniApp(request.headers.get('x-telegram-init-data'),env.TELEGRAM_BOT_TOKEN);
+ if(!user)return error('unauthorized',401);
+ if(!env.SIGNALS_DB)return error('storage_unavailable',503);
+ let input;
+ try{input=await request.json();}catch(_){return error('invalid_json');}
+ if(!input||typeof input!=='object'||Array.isArray(input))return error('invalid_input');
+ const op=new URL(request.url).pathname.slice('/api/app/'.length),id=String(user.id);
+ try{
+  switch(op){
+   case 'getProfile':{
+    const lang=await languageFor(env,id);
+    return json({id:user.id,firstName:String(user.first_name||''),username:String(user.username||''),language:lang,source:'telegram'});
+   }
+   case 'getCapabilities':
+    return json({version:'0.2.0',serverless:true,platform:'cloudflare',defaultLanguage:'en',supportedLanguages:LANGUAGES,symbols:SYMBOLS,signalsConfigured:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET),features:{liveStreaming:false,mt5:false,autotrade:false,payments:false,ai:Boolean(env.OPENROUTER_API_KEY&&env.OPENROUTER_MODEL),alerts:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET)}});
+   case 'getPrice':{
+    const data=await marketPrice(input.symbol);
+    return data.error?error(data.error,data.error==='UNSUPPORTED_SYMBOL'?400:503):json(data);
+   }
+   case 'getSignals':{
+    const limit=Math.max(1,Math.min(30,Number(input.limit)||15));
+    const rows=await env.SIGNALS_DB.prepare('SELECT symbol,side,timeframe,price,stop_loss,take_profit,strategy,created_at FROM signals ORDER BY created_at DESC LIMIT ?').bind(Math.trunc(limit)).all();
+    return json({configured:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET),signals:rows.results||[]});
+   }
+   case 'getWatchlist':{
+    const row=await env.SIGNALS_DB.prepare('SELECT symbols FROM watchlists WHERE user_id=?').bind(id).first();
+    let symbols=[];try{symbols=JSON.parse(row?.symbols||'[]');}catch(_){}
+    return json({symbols:Array.isArray(symbols)?symbols.filter(selectedSymbol):[]});
+   }
+   case 'saveWatchlist':{
+    if(!Array.isArray(input.symbols)||input.symbols.length>20||input.symbols.some(x=>!selectedSymbol(x)))return error('invalid_watchlist');
+    const symbols=[...new Set(input.symbols.map(selectedSymbol))];
+    await env.SIGNALS_DB.prepare('INSERT INTO watchlists(user_id,symbols) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET symbols=excluded.symbols').bind(id,JSON.stringify(symbols)).run();
+    return json({symbols});
+   }
+   case 'saveSettings':{
+    if(!LANGUAGES.includes(input.language))return error('unsupported_language');
+    await env.SIGNALS_DB.prepare('INSERT INTO user_settings(user_id,language) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET language=excluded.language').bind(id,input.language).run();
+    return json({language:input.language});
+   }
+   default:return error('not_found',404);
+  }
+ }catch(_){return error('database_unavailable',503);}
+}
+async function sendTelegram(env,chatId,message){
+ const url='https://api.telegram.org/bot'+env.TELEGRAM_BOT_TOKEN+'/sendMessage';
+ const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({chat_id:chatId,text:message,disable_web_page_preview:true})});
+ return r.ok;
+}
+async function telegramWebhook(request,env){
+ if(request.method!=='POST')return error('method_not_allowed',405);
+ if(!env.TELEGRAM_BOT_TOKEN||!env.TELEGRAM_WEBHOOK_SECRET)return error('telegram_not_configured',503);
+ if(!await safeEqual(request.headers.get('x-telegram-bot-api-secret-token'),env.TELEGRAM_WEBHOOK_SECRET))return error('unauthorized',401);
+ if(Number(request.headers.get('content-length')||0)>32768)return error('payload_too_large',413);
+ const raw=await request.text();if(te.encode(raw).length>32768)return error('payload_too_large',413);
+ let update;try{update=JSON.parse(raw);}catch(_){return error('invalid_json');}
+ if(!update?.message?.chat?.id||typeof update.message.text!=='string')return json({ok:true});
+ const msg=update.message,chatId=msg.chat.id,userId=msg.from?.id,token=msg.text.trim().split(/\s+/);
+ const op=(token[0]||'').split('@')[0].toLowerCase();
+ if(msg.chat.type!=='private'&&!op.startsWith('/'))return json({ok:true});
+ let answer='';
+ if(op==='/start'||op==='/help')answer='Welcome to DrFXQuant Mini\n/price BTCUSDT — Spot price\n/signals — Latest alerts\n/language en|fa|ar|tr|ru|hi — Change language\nOpen the Mini App from the bot menu.';
+ else if(op==='/price'){const s=selectedSymbol(token[1]);if(!s)answer='Usage: /price BTCUSDT';else{const data=await marketPrice(s);answer=data.error?'Live price unavailable':s+' · '+data.price+' USDT\nSource: '+data.source+'\nObserved: '+new Date(data.observedAt).toISOString();}}
+ else if(op==='/signals'){if(!env.SIGNALS_DB)answer='Signal storage unavailable';else{const rows=await env.SIGNALS_DB.prepare('SELECT symbol,side,timeframe,created_at FROM signals ORDER BY created_at DESC LIMIT 5').all();answer=(rows.results||[]).map(x=>x.symbol+' '+x.side.toUpperCase()+' '+x.timeframe+' · '+x.created_at).join('\n')||'No signal alerts yet';}}
+ else if(op==='/language'){if(!LANGUAGES.includes(token[1]))answer='Usage: /language en|fa|ar|tr|ru|hi';else if(!userId||!env.SIGNALS_DB)answer='Settings unavailable';else{await env.SIGNALS_DB.prepare('INSERT INTO user_settings(user_id,language) VALUES (?,?) ON CONFLICT(user_id) DO UPDATE SET language=excluded.language').bind(String(userId),token[1]).run();answer='Language saved: '+token[1];}}
+ else if(msg.chat.type==='private')answer='Use /help for commands.';
+ if(answer)await sendTelegram(env,chatId,answer);
+ return json({ok:true});
+}
+// Build-time static asset injection. Source can still be imported by Node tests.
+const STATIC_ASSETS="__STATIC_ASSETS__";
+function serveAsset(pathname){
+ const file=pathname==='/'?'/index.html':pathname;
+ const asset=typeof STATIC_ASSETS==='string'?null:STATIC_ASSETS[file];
+ if(!asset)return null;
+ return new Response(asset.body,{status:200,headers:{'Content-Type':asset.type,'Cache-Control':file==='/index.html'?'no-cache':'public, max-age=300','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','X-Frame-Options':'SAMEORIGIN'}});
+}
+
 export default {
  async fetch(request,env,ctx){
   const url=new URL(request.url);
+  if(request.method==='GET'){const asset=serveAsset(url.pathname);if(asset)return asset;}
+  if(url.pathname.startsWith('/api/app/'))return appEndpoint(request,env);
+  if(url.pathname==='/api/bot/webhook')return telegramWebhook(request,env);
   if(url.pathname==='/api/ai')return aiReply(request,env);
-  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'DrFXQuant Mini Gateway',version:'0.1.0'});
+  if(url.pathname==='/health'&&request.method==='GET')return json({ok:true,service:'DrFXQuant Mini',version:'0.2.0',configured:{telegram:Boolean(env.TELEGRAM_BOT_TOKEN),market:true,signals:Boolean(env.TRADINGVIEW_WEBHOOK_SECRET),ai:Boolean(env.OPENROUTER_API_KEY&&env.OPENROUTER_MODEL)}});
   if(url.pathname==='/api/webhooks/tradingview'){
     if(request.method!=='POST')return json({error:'method_not_allowed'},405);
     if(!env.SIGNALS_DB)return json({error:'storage_unavailable'},503);

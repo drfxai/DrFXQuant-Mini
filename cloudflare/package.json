@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run build && wrangler deploy",
     "test": "node --test test/*.test.mjs",
-    "migrate:local": "wrangler d1 migrations apply drfxquant-mini-signals --local",
-    "migrate:remote": "wrangler d1 migrations apply drfxquant-mini-signals --remote"
+    "migrate:local": "wrangler d1 migrations apply drfxquant-mini --local",
+    "migrate:remote": "wrangler d1 migrations apply drfxquant-mini --remote",
+    "build": "node scripts/build.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

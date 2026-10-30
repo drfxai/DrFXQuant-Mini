@@ -16,3 +16,5 @@ jobs:
       - run: node tests/static-check.mjs
       - run: node --test tests/*.test.mjs
       - run: cd cloudflare && node --test test/*.test.mjs
+      - run: cd cloudflare && npm run build
+      - run: node --check cloudflare/dist/worker.mjs

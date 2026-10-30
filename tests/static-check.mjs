@@ -15,6 +15,6 @@ for(const p of files){
  }
 }
 assert.ok(fs.readFileSync(path.join(root,'web/index.html'),'utf8').includes('telegram-web-app.js'));
-assert.ok(fs.readFileSync(path.join(root,'web/app.js'),'utf8').includes("Serverless.call"));
+assert.ok(fs.readFileSync(path.join(root,'web/app.js'),'utf8').includes("'/api/app/'"));
 assert.ok(fs.readFileSync(path.join(root,'tgcloud/endpoints/getProfile.js'),'utf8').includes('ctx?.initData?.user'));
 console.log('PASS: '+files.length+' files checked (syntax, runtime constraints, secrets, Mini App contract).');
